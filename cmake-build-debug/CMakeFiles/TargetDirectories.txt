@@ -1,0 +1,3 @@
+F:/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/CMakeFiles/modelocpp.dir
+F:/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/CMakeFiles/edit_cache.dir
+F:/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/CMakeFiles/rebuild_cache.dir

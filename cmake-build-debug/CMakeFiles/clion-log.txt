@@ -1,0 +1,18 @@
+C:\Users\Estivel\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\212.5457.51\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug "-DCPLEX_ROOT_DIR=C:/Program Files/IBM/ILOG/CPLEX_Studio201" -DCMAKE_DEPENDS_USE_COMPILER=FALSE -G "CodeBlocks - NMake Makefiles" F:\OneDrive\_each\_Quali\Artigo\modelocpp
+CMake Deprecation Warning at CMakeLists.txt:5 (cmake_minimum_required):
+  Compatibility with CMake < 2.8.12 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value or use a ...<max> suffix to tell
+  CMake that the project does not need compatibility with older versions.
+
+
+-- CPLEX_LIBRARY="C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/lib/x64_windows_msvc14/stat_mda/cplex2010.lib"
+-- CPLEX_INCLUDE_DIR="C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include"
+-- CPLEX_ILOCPLEX_LIBRARY="C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/lib/x64_windows_msvc14/stat_mda/ilocplex.lib"
+-- CPLEX_CONCERT_LIBRARY="C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/lib/x64_windows_msvc14/stat_mda/concert.lib"
+-- CPLEX_CONCERT_INCLUDE_DIR="C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include"
+-- CPLEX_LIBRARIES="C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/lib/x64_windows_msvc14/stat_mda/concert.lib;C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/lib/x64_windows_msvc14/stat_mda/ilocplex.lib;C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/lib/x64_windows_msvc14/stat_mda/cplex2010.lib"
+-- Configuring done
+-- Generating done
+-- Build files have been written to: F:/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug
