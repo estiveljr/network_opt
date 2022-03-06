@@ -4,97 +4,95 @@
 	<Project>
 		<Option title="modelocpp"/>
 		<Option makefile_is_custom="1"/>
-		<Option compiler="msvc8"/>
+		<Option compiler="gcc"/>
 		<Option virtualFolders="CMake Files\;CMake Files\cmake\;"/>
 		<Build>
 			<Target title="all">
-				<Option working_dir="F:/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug"/>
+				<Option working_dir="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 all"/>
-					<CompileFile command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
-					<DistClean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="modelocpp">
-				<Option output="F:/OneDrive/_each/_Quali/Artigo/modelocpp/build/modelocpp.exe" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="F:/OneDrive/_each/_Quali/Artigo/modelocpp/build"/>
-				<Option object_output="./"/>
-				<Option type="1"/>
-				<Option compiler="msvc8"/>
-				<Compiler>
-					<Add directory="C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include"/>
-					<Add directory="C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include"/>
-					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\ATLMFC\include"/>
-					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\include"/>
-					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\ucrt"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\shared"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\um"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\winrt"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\cppwinrt"/>
-				</Compiler>
-				<MakeCommands>
-					<Build command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 modelocpp"/>
-					<CompileFile command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
-					<DistClean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="modelocpp/fast">
-				<Option output="F:/OneDrive/_each/_Quali/Artigo/modelocpp/build/modelocpp.exe" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="F:/OneDrive/_each/_Quali/Artigo/modelocpp/build"/>
-				<Option object_output="./"/>
-				<Option type="1"/>
-				<Option compiler="msvc8"/>
-				<Compiler>
-					<Add directory="C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include"/>
-					<Add directory="C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include"/>
-					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\ATLMFC\include"/>
-					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\include"/>
-					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\ucrt"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\shared"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\um"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\winrt"/>
-					<Add directory="D:\Windows Kits\10\include\10.0.22000.0\cppwinrt"/>
-				</Compiler>
-				<MakeCommands>
-					<Build command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 modelocpp/fast"/>
-					<CompileFile command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
-					<DistClean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="edit_cache">
-				<Option working_dir="F:/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug"/>
-				<Option type="4"/>
-				<MakeCommands>
-					<Build command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 edit_cache"/>
-					<CompileFile command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
-					<DistClean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="rebuild_cache">
-				<Option working_dir="F:/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug"/>
+				<Option working_dir="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
-					<DistClean command="nmake /NOLOGO /f F:\OneDrive\_each\_Quali\Artigo\modelocpp\cmake-build-debug\Makefile VERBOSE=1 clean"/>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="modelocpp">
+				<Option output="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/build/modelocpp" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/ibm/ILOG/CPLEX_Studio201/cplex/include"/>
+					<Add directory="/opt/ibm/ILOG/CPLEX_Studio201/concert/include"/>
+					<Add directory="/usr/include/c++/10"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
+					<Add directory="/usr/include/c++/10/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/10/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 modelocpp"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="modelocpp/fast">
+				<Option output="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/build/modelocpp" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/ibm/ILOG/CPLEX_Studio201/cplex/include"/>
+					<Add directory="/opt/ibm/ILOG/CPLEX_Studio201/concert/include"/>
+					<Add directory="/usr/include/c++/10"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
+					<Add directory="/usr/include/c++/10/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/10/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 modelocpp/fast"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="F:/OneDrive/_each/_Quali/Artigo/modelocpp/main.cpp">
+		<Unit filename="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/main.cpp">
 			<Option target="modelocpp"/>
 		</Unit>
-		<Unit filename="F:/OneDrive/_each/_Quali/Artigo/modelocpp/CMakeLists.txt">
+		<Unit filename="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>
-		<Unit filename="F:/OneDrive/_each/_Quali/Artigo/modelocpp/cmake/FindCPLEX.cmake">
+		<Unit filename="/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake/FindCPLEX.cmake">
 			<Option virtualFolder="CMake Files\cmake\"/>
 		</Unit>
 	</Project>

@@ -1,18 +1,14 @@
-C:\Users\Estivel\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\212.5457.51\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Release "-DCPLEX_ROOT_DIR=C:/Program Files/IBM/ILOG/CPLEX_Studio201" -DCMAKE_DEPENDS_USE_COMPILER=FALSE -G "CodeBlocks - NMake Makefiles" F:\OneDrive\_each\_Quali\Artigo\modelocpp
-CMake Deprecation Warning at CMakeLists.txt:5 (cmake_minimum_required):
-  Compatibility with CMake < 2.8.12 will be removed from a future version of
-  CMake.
-
-  Update the VERSION argument <min> value or use a ...<max> suffix to tell
-  CMake that the project does not need compatibility with older versions.
-
-
--- CPLEX_LIBRARY="C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/lib/x64_windows_msvc14/stat_mda/cplex2010.lib"
--- CPLEX_INCLUDE_DIR="C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include"
--- CPLEX_ILOCPLEX_LIBRARY="C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/lib/x64_windows_msvc14/stat_mda/ilocplex.lib"
--- CPLEX_CONCERT_LIBRARY="C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/lib/x64_windows_msvc14/stat_mda/concert.lib"
--- CPLEX_CONCERT_INCLUDE_DIR="C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include"
--- CPLEX_LIBRARIES="C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/lib/x64_windows_msvc14/stat_mda/concert.lib;C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/lib/x64_windows_msvc14/stat_mda/ilocplex.lib;C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/lib/x64_windows_msvc14/stat_mda/cplex2010.lib"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "export CLION_IDE=TRUE && export JETBRAINS_IDE=TRUE && cd /mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-release && /usr/bin/cmake -DCMAKE_BUILD_TYPE=Release -G 'CodeBlocks - Unix Makefiles' /mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp"
+-- WSL="1"
+-- CMAKE_CXX_FLAGS=" -DIL_STD -Wall  -std=c++17 -LD_DEBUG=all"
+-- CPLEX_LIBRARY="/opt/ibm/ILOG/CPLEX_Studio201/cplex/lib/x86-64_linux/static_pic/libcplex.a"
+-- CPLEX_INCLUDE_DIR="/opt/ibm/ILOG/CPLEX_Studio201/cplex/include"
+-- CPLEX_ILOCPLEX_LIBRARY="/opt/ibm/ILOG/CPLEX_Studio201/cplex/lib/x86-64_linux/static_pic/libilocplex.a"
+-- CPLEX_CONCERT_LIBRARY="/opt/ibm/ILOG/CPLEX_Studio201/concert/lib/x86-64_linux/static_pic/libconcert.a"
+-- CPLEX_CONCERT_INCLUDE_DIR="/opt/ibm/ILOG/CPLEX_Studio201/concert/include"
+-- CMAKE_SYSTEM_NAME="Linux"
+passouaqui
+-- CPLEX_LIBRARIES="/opt/ibm/ILOG/CPLEX_Studio201/concert/lib/x86-64_linux/static_pic/libconcert.a;/opt/ibm/ILOG/CPLEX_Studio201/cplex/lib/x86-64_linux/static_pic/libilocplex.a;/opt/ibm/ILOG/CPLEX_Studio201/cplex/lib/x86-64_linux/static_pic/libcplex.a;m;pthread;dl"
 -- Configuring done
 -- Generating done
--- Build files have been written to: F:/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-release
+-- Build files have been written to: /mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-release

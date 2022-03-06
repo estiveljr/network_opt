@@ -6,29 +6,45 @@
 
 #IncludeRegexTransform: 
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloalg.h
+/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/main.cpp
+iostream
+-
+fstream
+-
+vector
+-
+sstream
+-
+limits
+-
+map
+-
+ilcplex/ilocplex.h
+-
+
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloalg.h
 ilconcert/iloenv.h
 -
 ilconcert/iloextractable.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloalgi.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloalgi.h
 ilconcert/ilomodeli.h
 -
 ilconcert/ilolinear.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloallocator.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloallocator.h
 ilconcert/ilosys.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloany.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloany.h
 ilconcert/iloexpression.h
 -
 ilconcert/ilolinear.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloanyset.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloanyset.h
 ilconcert/iloany.h
 -
 ilconcert/iloset.h
@@ -36,25 +52,25 @@ ilconcert/iloset.h
 ilconcert/ilocollection.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilobasic.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilobasic.h
 ilconcert/ilosys.h
 -
 ilconcert/iloalg.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilobox.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilobox.h
 ilconcert/iloexpression.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilocollection.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilocollection.h
 ilconcert/iloenv.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilodomaini.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilodomaini.h
 ilconcert/iloexpression.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloenv.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloenv.h
 ilconcert/ilosys.h
 -
 ilconcert/ilortti.h
@@ -74,13 +90,13 @@ stdlib.h
 ctype.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloexpression.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloexpression.h
 ilconcert/iloextractable.h
 -
 ilconcert/iloalg.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloexpressioni.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloexpressioni.h
 ilconcert/iloexpression.h
 -
 ilconcert/ilsched/ilosbasic.h
@@ -88,7 +104,7 @@ ilconcert/ilsched/ilosbasic.h
 ilconcert/ilonumfunci.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloextractable.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloextractable.h
 ilconcert/iloenv.h
 -
 ilconcert/ilolinkedlist.h
@@ -96,41 +112,41 @@ ilconcert/ilolinkedlist.h
 ilconcert/iloalg.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilohash.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilohash.h
 ilconcert/ilosys.h
 -
 ilconcert/iloenv.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilointervals.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilointervals.h
 ilconcert/iloparam.h
 -
 ilconcert/ilointervalsi.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilointervalsi.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilointervalsi.h
 ilconcert/iloskiplist.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloiterator.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloiterator.h
 ilconcert/iloextractable.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilolinear.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilolinear.h
 ilconcert/iloexpression.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilolinkedlist.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilolinkedlist.h
 ilconcert/iloenv.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilomemmgr.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilomemmgr.h
 ilconcert/ilosys.h
 -
 ilconcert/ilortti.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilomodel.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilomodel.h
 ilconcert/iloalg.h
 -
 ilconcert/iloiterator.h
@@ -152,53 +168,53 @@ ilconcert/ilosmodel.h
 ilconcert/ilosolution.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilomodeli.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilomodeli.h
 ilconcert/iloextractable.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilonumfunc.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilonumfunc.h
 ilconcert/iloparam.h
 -
 ilconcert/ilonumfunci.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilonumfunci.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilonumfunci.h
 ilconcert/ilointervalsi.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloparam.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloparam.h
 ilconcert/iloparami.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloparami.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloparami.h
 ilconcert/ilobasic.h
 -
 ilconcert/iloextractable.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilorandom.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilorandom.h
 ilconcert/iloenv.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilortti.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilortti.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilosegfunc.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilosegfunc.h
 ilconcert/iloparam.h
 -
 ilconcert/ilonumfunci.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloset.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloset.h
 ilconcert/iloexpression.h
 -
 ilconcert/ilocollection.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloskiplist.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloskiplist.h
 ilconcert/iloparami.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilosmodel.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilosmodel.h
 ilconcert/iloexpression.h
 -
 ilconcert/iloexpressioni.h
@@ -210,7 +226,7 @@ ilconcert/ilonumfunc.h
 ilconcert/ilosegfunc.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilosolution.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilosolution.h
 ilconcert/iloalg.h
 -
 ilconcert/ilolinear.h
@@ -232,7 +248,7 @@ ilconcert/iloalg.h
 ilconcert/ilohash.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilosys.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilosys.h
 unistd.h
 -
 pthread.h
@@ -312,7 +328,7 @@ stdarg.h
 setjmp.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilsched/ilosbasic.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilsched/ilosbasic.h
 ilconcert/ilosys.h
 -
 ilconcert/iloalg.h
@@ -320,7 +336,7 @@ ilconcert/iloalg.h
 ilconcert/iloextractable.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilsched/ilostimei.h
+/opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/ilsched/ilostimei.h
 ilconcert/iloenv.h
 -
 ilconcert/iloexpression.h
@@ -334,39 +350,39 @@ ilconcert/ilonumfunci.h
 ilconcert/ilsched/ilosbasic.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplex.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplex.h
 cpxconst.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
 cpxconst.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexdistmip.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexdistmip.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexl.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexl.h
 cpxconst.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexremote.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexremote.h
 ilcplex/cplex.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilcplex/cplex.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilcplex/cplex.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexremotemaster.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexremotemaster.h
 ilcplex/cplexremote.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilcplex/cplexremote.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilcplex/cplexremote.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexs.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexs.h
 cpxconst.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexx.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexx.h
 cpxconst.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
 cplexs.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexs.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexs.h
 cplexl.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexl.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cplexl.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/cpxconst.h
 math.h
 -
 stdint.h
@@ -378,15 +394,15 @@ limits.h
 stdio.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilm.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilm.h
 ilcplex/cplex.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloCPXCALLBACKINFOenum.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloCPXCALLBACKINFOenum.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloCPXCALLBACKSOLUTIONSTRATEGYenum.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloCPXCALLBACKSOLUTIONSTRATEGYenum.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilocarray.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilocarray.h
 assert.h
 -
 stdlib.h
@@ -394,9 +410,9 @@ stdlib.h
 string.h
 -
 ilcplex/cplexx.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilcplex/cplexx.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilcplex/cplexx.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilocplex.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilocplex.h
 ilconcert/ilomodel.h
 -
 ilconcert/ilosys.h
@@ -410,7 +426,7 @@ ilcplex/ilm.h
 ilcplex/ilogoals.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilocplexi.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilocplexi.h
 ilconcert/ilomodel.h
 -
 ilconcert/iloalgi.h
@@ -430,31 +446,15 @@ ilcplex/cplexx.h
 ilcplex/iloparam.h
 -
 iloCPXCALLBACKINFOenum.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloCPXCALLBACKINFOenum.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloCPXCALLBACKINFOenum.h
 iloCPXCALLBACKSOLUTIONSTRATEGYenum.h
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloCPXCALLBACKSOLUTIONSTRATEGYenum.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloCPXCALLBACKSOLUTIONSTRATEGYenum.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilogoals.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilogoals.h
 ilcplex/ilocplexi.h
 -
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilomodelasst.h
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/ilomodelasst.h
 
-C:/Program Files/IBM/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloparam.h
-
-F:/OneDrive/_each/_Quali/Artigo/modelocpp/main.cpp
-iostream
--
-fstream
--
-vector
--
-sstream
--
-limits
--
-map
--
-ilcplex/ilocplex.h
--
+/opt/ibm/ILOG/CPLEX_Studio201/cplex/include/ilcplex/iloparam.h
 
