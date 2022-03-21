@@ -11,6 +11,8 @@ iostream
 -
 fstream
 -
+utility
+-
 vector
 -
 sstream
@@ -22,6 +24,12 @@ map
 ilcplex/ilocplex.h
 -
 variant
+-
+algorithm
+-
+stack
+-
+set
 -
 
 /opt/ibm/ILOG/CPLEX_Studio201/concert/include/ilconcert/iloalg.h

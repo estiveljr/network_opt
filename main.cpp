@@ -1,14 +1,17 @@
 #include <iostream>
 #include <fstream>
+#include <utility>
 #include <vector>
 #include <sstream>
 #include <limits>
 #include <map>
 #include <ilcplex/ilocplex.h>
 #include <variant>
+#include <algorithm>
+#include <stack>
+#include <set>
 
 using namespace std;
-using std::find;
 
 //caminho sin
 //static string caminho = "F:\\OneDrive\\_each\\_Quali\\Artigo\\modelocpp\\";
@@ -17,7 +20,13 @@ using std::find;
 static string caminho = "/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/";
 
 //bool DEBUG = 1;
-bool DEBUG = 0;
+bool DEBUG = true;
+
+enum tipo_grafo{
+    original,
+    ciclo,
+    componente,
+};
 
 struct ARCO {
     int index;
@@ -45,8 +54,28 @@ struct VERTICE{
     string vertice;
     string uf;
     string tipo;
-//    float demanda;
-//    float fornecimento;
+    public:
+        bool operator==(const VERTICE &v) const{
+            if(vertice == v.vertice){
+                return true;
+            }else{
+                return false;
+            }
+        }
+        bool operator<(const VERTICE &v) const{
+            if(vertice < v.vertice){
+                return true;
+            }else{
+                return false;
+            }
+        }
+        bool operator!=(const VERTICE &v) const{
+            if(vertice != v.vertice){
+                return true;
+            }else{
+                return false;
+            }
+        }
 };
 
 struct DEMANDA{
@@ -58,7 +87,156 @@ struct DEMANDA{
     float o;
 };
 
+float stringtofloat(string s){
+    if (s.length() == 0) {
+        return std::numeric_limits<float>::quiet_NaN();
+    } else {
+        return stof(s);
+    }
+}
+
+vector<ARCO> ler_csv_grafo(const std::string &nome_arquivo) {
+    ifstream infile;
+    string dados;
+    vector<ARCO> grafo; // cria um array com elemente do tipo ARCO, formando um grafo orientado.
+
+    infile.open(nome_arquivo);
+    if (!infile) {
+        cerr << "Erro ao abrir o arquivo";
+        exit(1);
+    }
+    std::string line;
+    int numlinha = 0;
+    while (infile >> line) {
+        std::string delimiter = ",";
+        size_t pos = 0;
+        std::string token;
+
+        ARCO arco;
+        grafo.push_back(arco);
+        string dados_arco[9];
+        int item_arco = 0;
+        do {
+            pos = line.find(delimiter);
+            token = line.substr(0, pos);
+            dados_arco[item_arco] = token;
+            line.erase(0, pos + delimiter.length());
+            item_arco++;
+        } while (pos != std::string::npos);
+
+        // ALOCA DADOS DE CADA LINHA DO STREAM NO GRAFO
+        if (numlinha != 0) {
+            grafo[numlinha - 1].index = numlinha - 1; //indice do arco no grafo
+            grafo[numlinha - 1].tipo_de_arco = dados_arco[0];
+            grafo[numlinha - 1].i = dados_arco[1];
+            grafo[numlinha - 1].j = dados_arco[2];
+            grafo[numlinha - 1].s = dados_arco[3];
+            grafo[numlinha - 1].a = stringtofloat(dados_arco[4]);
+            grafo[numlinha - 1].b = stringtofloat(dados_arco[5]);
+            grafo[numlinha - 1].c = stringtofloat(dados_arco[6]);
+            grafo[numlinha - 1].m = stringtofloat(dados_arco[7]);
+            grafo[numlinha - 1].n = stringtofloat(dados_arco[8]);
+        }
+        numlinha++;
+    }
+    infile.close();
+    grafo.resize(grafo.size() - 1 );
+
+    return grafo;
+}
+vector<VERTICE> ler_csv_vertices(const std::string &nome_arquivo) {
+    ifstream infile;
+    string dados;
+    vector<VERTICE> vertices_ufs;
+
+    infile.open(nome_arquivo);
+    if (!infile) {
+        cerr << "Erro ao abrir o arquivo";
+        exit(1);
+    }
+    std::string line;
+    int numlinha = 0;
+    while (infile >> line) {
+        std::string delimiter = ",";
+        size_t pos = 0;
+        std::string token;
+
+        VERTICE vertice_uf;
+        vertices_ufs.push_back(vertice_uf);
+        string dados_vertice[3];
+        int item_arco = 0;
+        do {
+            pos = line.find(delimiter);
+            token = line.substr(0, pos);
+            dados_vertice[item_arco] = token;
+            line.erase(0, pos + delimiter.length());
+            item_arco++;
+        } while (pos != std::string::npos);
+
+        // ALOCA DADOS DE CADA LINHA DO STREAM NO GRAFO
+        if (numlinha != 0) {
+            vertices_ufs[numlinha - 1].vertice = dados_vertice[0];
+            vertices_ufs[numlinha - 1].uf = dados_vertice[1];
+            vertices_ufs[numlinha - 1].tipo = dados_vertice[2];
+//            vertices_ufs[numlinha - 1].demanda = stringtofloat(dados_vertice[3]);
+//            vertices_ufs[numlinha - 1].fornecimento = stringtofloat(dados_vertice[4]);
+        }
+        numlinha++;
+    }
+    infile.close();
+    vertices_ufs.resize(vertices_ufs.size() - 1 );
+
+    return vertices_ufs;
+}
+vector<DEMANDA> ler_csv_demandas(const std::string &nome_arquivo) {
+    ifstream infile;
+    string dados;
+    vector<DEMANDA> demandas;
+
+    infile.open(nome_arquivo);
+    if (!infile) {
+        cerr << "Erro ao abrir o arquivo";
+        exit(1);
+    }
+    std::string line;
+    int numlinha = 0;
+    while (infile >> line) {
+        std::string delimiter = ",";
+        size_t pos = 0;
+        std::string token;
+
+        DEMANDA demanda;
+        demandas.push_back(demanda);
+        string dados_demandas[6];
+        int item_arco = 0;
+        do {
+            pos = line.find(delimiter);
+            token = line.substr(0, pos);
+            dados_demandas[item_arco] = token;
+            line.erase(0, pos + delimiter.length());
+            item_arco++;
+        } while (pos != std::string::npos);
+
+        // ALOCA DADOS DE CADA LINHA DO STREAM NO GRAFO
+        if (numlinha != 0) {
+            demandas[numlinha - 1].vertice = dados_demandas[0];
+            demandas[numlinha - 1].s = dados_demandas[1];
+            demandas[numlinha - 1].uf = dados_demandas[2];
+            demandas[numlinha - 1].tipo = dados_demandas[3];
+            demandas[numlinha - 1].d = stringtofloat(dados_demandas[4]);
+            demandas[numlinha - 1].o = stringtofloat(dados_demandas[5]);
+        }
+        numlinha++;
+    }
+    infile.close();
+    demandas.resize(demandas.size() - 1 );
+
+    return demandas;
+}
+
 struct GRAFO{
+    string nome;
+    tipo_grafo tipo;
     vector<ARCO> completo; // arco ijs
     map<vector<string>, ARCO> completo_dic; // retorna struct ARCO a partir da entrada ijs
     map<vector<string>, unsigned int> completo_idx; // retorna indice do arco completo ijs
@@ -71,6 +249,7 @@ struct GRAFO{
     vector<DEMANDA> demandas;
     std::map<vector<string>,DEMANDA> demandas_dic;
     vector<string> produtos;
+    vector<GRAFO> subgrafos;
     int qnt_arcos_localidade = 0;
     int qnt_arcos_transporte = 0;
     int qnt_arcos = 0;
@@ -78,6 +257,7 @@ struct GRAFO{
     int qnt_vertices = 0;
     int qnt_produtos = 0;
     int qnt_localidades = 0;
+
 
     // retona todas as origens i de um destino j, sem considerar o sku
     vector<string> orgs_de(string &vertice){
@@ -100,6 +280,15 @@ struct GRAFO{
         }
         return destinos;
     };
+    vector<VERTICE> dest_de(VERTICE &vertice){
+        vector<VERTICE> destinos;
+        for (ARCO_SIMPLES &arco: simples){
+            if (vertice.vertice == arco.i){
+                destinos.push_back(vertices_completo_dic[arco.j]);
+            }
+        }
+        return destinos;
+    };
 
     // retorna todos os arcos de transporte que possuem destino na UF especificada
     vector<ARCO> entradas_uf(string &uf){
@@ -114,6 +303,150 @@ struct GRAFO{
             }
         }
         return entradas;
+    }
+
+    static bool encontrar_elemento(string elem, vector<string> lista){
+        for (int i = 0; i < (int) lista.size(); ++i) {
+            if(elem == lista[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    explicit GRAFO( tipo_grafo tg = tipo_grafo::original, \
+                    const vector<VERTICE>& vertices_comp = {}, \
+                    const vector<ARCO>& grafo_comp= {}, \
+                    const vector<DEMANDA>& demandas_comp = {}) {
+        tipo = tg;
+        vertices_completo = vertices_comp;
+        completo = grafo_comp;
+        demandas = demandas_comp;
+        std::map<vector<string>, ARCO> grafo_completo_dic;
+        std::map<vector<string>, unsigned int> grafo_completo_idx;
+        vector<ARCO_SIMPLES> grafo_simples;
+        std::map<vector<string>, ARCO_SIMPLES> grafo_simples_dic;
+        std::map<vector<string>, unsigned int> grafo_simples_idx;
+
+        // criar grafo_completo a partir do arquivo de dados
+        if(vertices_completo.empty() and completo.empty() and demandas.empty()){
+            // dados para dev componentes
+            completo = ler_csv_grafo(caminho + "ciclos_arcos.csv");
+            vertices_completo = ler_csv_vertices(caminho + "ciclos_vertices.csv");
+            demandas = ler_csv_demandas(caminho + "ciclos_demandas.csv");
+
+            // dados para dev ciclos
+//            completo = ler_csv_grafo(caminho + "arcos_consolidados.csv");
+//            vertices_completo = ler_csv_vertices(caminho + "vertices_completo.csv");
+//            demandas = ler_csv_demandas(caminho + "demandas_fornecimento.csv");
+
+            //dados instancia malha
+//    grafo_completo = ler_csv_grafo(caminho + "dados_comp_arcos.csv");
+//    vertices_completo = ler_csv_vertices(caminho + "dados_comp_vertices.csv");
+//    demandas = ler_csv_demandas(caminho + "dados_comp_dem_forn.csv");
+        }
+
+
+        // tranforma o vertices_completo em um dicionário para consulta por nós e salva uma lista com os vértices
+        for (VERTICE &vertice : vertices_completo) {
+            string key = vertice.vertice;
+            vertices_completo_dic[key] = vertice;
+            vertices.push_back(vertice.vertice);
+
+        }
+
+        // tranforma "demandas" em um dicionário para consulta por "nó, sku" e salva uma lista com os vértices
+        for (int i = 0; i < int(demandas.size()); ++i) {
+            DEMANDA demanda = demandas[i];
+            vector<string> key = {demanda.vertice, demanda.s};
+            demandas_dic[key] = demanda;
+//        vertices.push_back(demanda.demanda);
+
+        }
+        // tranforma o grafo_completo em um dicionário para consulta por par de nós e sku
+        for (unsigned int i = 0; i < completo.size(); ++i) {
+            vector<string> key = {completo[i].i, completo[i].j, completo[i].s};
+            grafo_completo_dic[key] = completo[i];
+            grafo_completo_idx[key] = i;
+        }
+
+        // quantidades de cada tipo de arco
+        for (int arco = 0; arco < (int) completo.size(); arco++){
+            if (completo[arco].tipo_de_arco == "localidade"){
+                ++qnt_arcos_localidade;
+            }else if (completo[arco].tipo_de_arco == "transporte"){
+                ++qnt_arcos_transporte;
+            }
+        }
+
+        // grafo simples, sem considerar o sku
+        int cont_arco_s = 0; // contagem de arcos simples é menor porque precisa nao considera sku
+        for (int arco = 0; arco < (int) completo.size(); arco++){
+            if (arco == 0){
+                ARCO_SIMPLES arco_simples;
+                arco_simples.index = cont_arco_s;
+                arco_simples.tipo_de_arco = completo[arco].tipo_de_arco;
+                arco_simples.i = completo[arco].i ;
+                arco_simples.j = completo[arco].j ;
+                arco_simples.a = completo[arco].a ;
+                arco_simples.c = completo[arco].c ;
+                grafo_simples.push_back(arco_simples);
+                ++cont_arco_s;
+            }else if (!(completo[arco].i == completo[arco - 1].i and completo[arco].j == completo[arco - 1].j)) {
+                ARCO_SIMPLES arco_simples;
+                arco_simples.index = cont_arco_s;
+                arco_simples.tipo_de_arco = completo[arco].tipo_de_arco;
+                arco_simples.i = completo[arco].i ;
+                arco_simples.j = completo[arco].j ;
+                arco_simples.a = completo[arco].a ;
+                arco_simples.c = completo[arco].c ;
+                grafo_simples.push_back(arco_simples);
+                ++cont_arco_s;
+            }
+        }
+
+        // tranforma o grafo_simples em um dicionário para consulta por par de nós
+        for (unsigned int i = 0; i < grafo_simples.size(); ++i) {
+            vector<string> key = {grafo_simples[i].i, grafo_simples[i].j};
+            grafo_simples_dic[key] = grafo_simples[i];
+            grafo_simples_idx[key] = i;
+        }
+
+        // encontra quais os produtos "s" presentes no grafo
+        for (int arco = 0; arco < (int) completo.size() ; ++arco) {
+            string produto = completo[arco].s;
+            if (produto == "")continue;
+            if(!encontrar_elemento(produto,produtos)){
+                produtos.push_back(produto);
+                qnt_produtos++;
+            }
+        }
+
+        // quantidade de localidades
+        for (ARCO_SIMPLES arco: grafo_simples){
+            if (arco.tipo_de_arco == "localidade") {
+                ++qnt_localidades;
+            }
+        }
+
+
+        // atribuindo valores ao struct do grafo
+        completo_dic = grafo_completo_dic;
+        completo_idx = grafo_completo_idx;
+        simples = grafo_simples;
+        simples_dic = grafo_simples_dic;
+        simples_idx = grafo_simples_idx;
+        vertices_completo_dic = vertices_completo_dic;
+        vertices = vertices;
+        produtos = produtos;
+        qnt_arcos_transporte = qnt_arcos_transporte;
+        qnt_arcos_localidade = qnt_arcos_localidade;
+        qnt_arcos = (int) completo.size();
+        qnt_localidades = qnt_localidades;
+        qnt_arcos_simples = (int) simples.size();
+        qnt_vertices = (int) vertices_completo.size();
+        qnt_produtos = qnt_produtos;
+        demandas_dic = demandas_dic;
     }
 
     // retona todos os arcos de transporte que possuem origem na UF especificada
@@ -131,7 +464,193 @@ struct GRAFO{
         return saidas;
     }
 
+    //adicionar um subgrafo ao grafo.
+    void add_subgrafo(tipo_grafo tg, vector<VERTICE> sub_vertices){
+        vector<ARCO> sub_arcos;
+        vector<DEMANDA> sub_demanda;
+        for (ARCO a: GRAFO::completo) {
+            for (VERTICE u: sub_vertices) {
+                for (VERTICE v: sub_vertices) {
+                    if (a.i == u.vertice and a.i == v.vertice) {
+                        sub_arcos.push_back(a);
+                    }
+                }
+            }
+        }
+        for (VERTICE u: sub_vertices) {
+            for (DEMANDA d: sub_demanda) {
+                if (u.vertice == d.vertice) {
+
+                }
+            }
+        }
+        GRAFO subgrafo = GRAFO(tg,sub_vertices,sub_arcos,demandas);
+        subgrafos.push_back(subgrafo);
+    }
+
+    vector<VERTICE> visited;
+    stack<VERTICE> finished_stack;
+    set<VERTICE> finished_set;
+    vector<VERTICE> assigned;
+    map<VERTICE, vector<VERTICE>> components;
+
+    void visit(VERTICE &u){
+        if (find(visited.begin(), visited.end(), u) == visited.end() ) {
+            visited.push_back(u);
+            for(string v: dest_de(u.vertice)){
+                visit(vertices_completo_dic[v]);
+                if(find(finished_set.begin(), finished_set.end(),vertices_completo_dic[v]) == finished_set.end()){
+                    finished_set.insert(u);
+                    finished_stack.push(u);
+                }
+            }
+        }
+    }
+
+    void assign(VERTICE &v, VERTICE &root){
+        if(find(assigned.begin(), assigned.end(), v) == assigned.end()){
+            assigned.push_back(v);
+            const VERTICE key = root;
+            vector<VERTICE> list_components;
+            //regra para atualizar a lista de componentes
+            if(root!= components.find(key)->first){ //check if root is empty
+                list_components = {v};
+            }else{
+                list_components = components.find(root)->second;
+                list_components.push_back(v);
+            }
+            const vector<VERTICE> value = list_components;
+            components.erase(key);
+            components.insert(make_pair(key,value));
+            for(string u: orgs_de(v.vertice)) {
+                assign(vertices_completo_dic[u], root);
+            }
+        }
+    }
+
+    void find_components() {
+//    For each vertex u of the graph, mark u as unvisited. Let L be empty.
+//            For each vertex u of the graph do Visit(u), where Visit(u) is the recursive subroutine:
+//    If u is unvisited then:
+//    Mark u as visited.
+//            For each out-neighbour v of u, do Visit(v).
+//                Prepend u to L.
+//            Otherwise do nothing.
+//    For each element u of L in order, do Assign(u,u) where Assign(u,root) is the recursive subroutine:
+//      If u has not been assigned to a component then:
+//          Assign u as belonging to the component whose root is root.
+//            For each in-neighbour v of u, do Assign(v,root).
+//                Otherwise do nothing.
+        for (VERTICE u: vertices_completo){
+            visit(u);
+        }
+        while(!finished_stack.empty()){
+            assign(finished_stack.top(),finished_stack.top());
+            finished_stack.pop();
+        }
+
+        //cria uma lista de subgrafos a partir dos componentes
+        for(pair<const VERTICE, vector<VERTICE>> c: components) {
+            if (c.second.size() > 1) {
+                vector<VERTICE> sub_vertices = c.second;
+                vector<ARCO> sub_arcos;
+                vector<DEMANDA> sub_demanda;
+                for (ARCO a: GRAFO::completo) {
+                    for (VERTICE u: sub_vertices) {
+                        for (VERTICE v: sub_vertices) {
+                            if (a.i == u.vertice and a.i == v.vertice) {
+                                sub_arcos.push_back(a);
+                            }
+                        }
+                    }
+                }
+                for (VERTICE u: sub_vertices) {
+                    for (DEMANDA d: sub_demanda) {
+                        if (u.vertice == d.vertice) {
+
+                        }
+                    }
+                }
+                add_subgrafo(tipo_grafo::componente, sub_vertices);
+            }
+        }
+    }
+
+    // inicia algo do cyclos.
+    deque<VERTICE> cycle_candidate = {};
+    map<VERTICE,bool> blocked = {};
+    map<VERTICE,vector<VERTICE>> blocked_map = {};
+    VERTICE s;
+
+    void unblock(VERTICE &v){
+        blocked[v] = false;
+        for(VERTICE w: blocked_map[v]){
+           blocked_map.erase(w);
+           if(blocked[w] == true) unblock(w);
+        }
+    }
+
+    bool cycle(VERTICE &v){
+        bool f = false;
+        cycle_candidate.push_back(v);
+        blocked[v] = true;
+        // L1
+        for(VERTICE w: dest_de(v)){
+            if(w == s){ // s: inicio do caminho
+                vector<VERTICE> vertices;
+                for(VERTICE i: cycle_candidate) vertices.push_back(i);
+                add_subgrafo(tipo_grafo::ciclo,vertices);
+            }else if(blocked[w]){
+                if(cycle(w)) f = true;
+            }
+        }
+        // L2
+        if(f){
+            unblock(v);
+        }else{
+            for(VERTICE w: dest_de(v)){
+                for(VERTICE u: blocked_map[w]){
+                    if(u == v) blocked_map[w].push_back(v);
+                }
+            }
+        }
+        cycle_candidate.pop_back();
+        return f;
+    }
+
+    void find_cycles(){
+        find_components();
+        cycle_candidate = {}; //limpar stack.
+        //main loop (while do no artigo)
+        for(GRAFO subg: subgrafos){
+            if(subg.tipo == tipo_grafo::componente){
+                for(const VERTICE& vertice: subg.vertices_completo) {
+                    s = vertice;
+                    //verifica se o vertice s pertence ao grafo subg, se não pertencer, encerra o main loop
+                    bool sg = false;
+                    for (VERTICE v: subg.vertices_completo) {
+                        if (s == v) {
+                            sg = true;
+                            break;
+                        }
+                    }
+
+                    if(!sg) return;
+
+                    for(VERTICE i: subg.vertices_completo){
+                        blocked[i] = false;
+                        blocked_map[i] = {};
+                    }
+                    bool dummy = cycle(s);
+                    if(dummy){}
+                }
+
+            }
+        }
+
+    }
 };
+
 
 template<typename T>
 void debug(vector<T> &messages){
@@ -347,177 +866,33 @@ int contarLinhas(const std::string &nome_arquivo) {
     return nlinhas;
 }
 
-float stringtofloat(string s){
-    if (s.length() == 0) {
-        return std::numeric_limits<float>::quiet_NaN();
-    } else {
-        return stof(s);
-    }
-}
-
-vector<ARCO> ler_csv_grafo(const std::string &nome_arquivo) {
-    ifstream infile;
-    string dados;
-    vector<ARCO> grafo; // cria um array com elemente do tipo ARCO, formando um grafo orientado.
-
-    infile.open(nome_arquivo);
-    if (!infile) {
-        cerr << "Erro ao abrir o arquivo";
-        exit(1);
-    }
-    std::string line;
-    int numlinha = 0;
-    while (infile >> line) {
-        std::string delimiter = ",";
-        size_t pos = 0;
-        std::string token;
-
-        ARCO arco;
-        grafo.push_back(arco);
-        string dados_arco[9];
-        int item_arco = 0;
-        do {
-            pos = line.find(delimiter);
-            token = line.substr(0, pos);
-            dados_arco[item_arco] = token;
-            line.erase(0, pos + delimiter.length());
-            item_arco++;
-        } while (pos != std::string::npos);
-
-        // ALOCA DADOS DE CADA LINHA DO STREAM NO GRAFO
-        if (numlinha != 0) {
-            grafo[numlinha - 1].index = numlinha - 1; //indice do arco no grafo
-            grafo[numlinha - 1].tipo_de_arco = dados_arco[0];
-            grafo[numlinha - 1].i = dados_arco[1];
-            grafo[numlinha - 1].j = dados_arco[2];
-            grafo[numlinha - 1].s = dados_arco[3];
-            grafo[numlinha - 1].a = stringtofloat(dados_arco[4]);
-            grafo[numlinha - 1].b = stringtofloat(dados_arco[5]);
-            grafo[numlinha - 1].c = stringtofloat(dados_arco[6]);
-            grafo[numlinha - 1].m = stringtofloat(dados_arco[7]);
-            grafo[numlinha - 1].n = stringtofloat(dados_arco[8]);
-        }
-        numlinha++;
-    }
-    infile.close();
-    grafo.resize(grafo.size() - 1 );
-
-    return grafo;
-}
-vector<VERTICE> ler_csv_vertices(const std::string &nome_arquivo) {
-    ifstream infile;
-    string dados;
-    vector<VERTICE> vertices_ufs;
-
-    infile.open(nome_arquivo);
-    if (!infile) {
-        cerr << "Erro ao abrir o arquivo";
-        exit(1);
-    }
-    std::string line;
-    int numlinha = 0;
-    while (infile >> line) {
-        std::string delimiter = ",";
-        size_t pos = 0;
-        std::string token;
-
-        VERTICE vertice_uf;
-        vertices_ufs.push_back(vertice_uf);
-        string dados_vertice[3];
-        int item_arco = 0;
-        do {
-            pos = line.find(delimiter);
-            token = line.substr(0, pos);
-            dados_vertice[item_arco] = token;
-            line.erase(0, pos + delimiter.length());
-            item_arco++;
-        } while (pos != std::string::npos);
-
-        // ALOCA DADOS DE CADA LINHA DO STREAM NO GRAFO
-        if (numlinha != 0) {
-            vertices_ufs[numlinha - 1].vertice = dados_vertice[0];
-            vertices_ufs[numlinha - 1].uf = dados_vertice[1];
-            vertices_ufs[numlinha - 1].tipo = dados_vertice[2];
-//            vertices_ufs[numlinha - 1].demanda = stringtofloat(dados_vertice[3]);
-//            vertices_ufs[numlinha - 1].fornecimento = stringtofloat(dados_vertice[4]);
-        }
-        numlinha++;
-    }
-    infile.close();
-    vertices_ufs.resize(vertices_ufs.size() - 1 );
-
-    return vertices_ufs;
-}
-
-
-vector<DEMANDA> ler_csv_demandas(const std::string &nome_arquivo) {
-    ifstream infile;
-    string dados;
-    vector<DEMANDA> demandas;
-
-    infile.open(nome_arquivo);
-    if (!infile) {
-        cerr << "Erro ao abrir o arquivo";
-        exit(1);
-    }
-    std::string line;
-    int numlinha = 0;
-    while (infile >> line) {
-        std::string delimiter = ",";
-        size_t pos = 0;
-        std::string token;
-
-        DEMANDA demanda;
-        demandas.push_back(demanda);
-        string dados_demandas[6];
-        int item_arco = 0;
-        do {
-            pos = line.find(delimiter);
-            token = line.substr(0, pos);
-            dados_demandas[item_arco] = token;
-            line.erase(0, pos + delimiter.length());
-            item_arco++;
-        } while (pos != std::string::npos);
-
-        // ALOCA DADOS DE CADA LINHA DO STREAM NO GRAFO
-        if (numlinha != 0) {
-            demandas[numlinha - 1].vertice = dados_demandas[0];
-            demandas[numlinha - 1].s = dados_demandas[1];
-            demandas[numlinha - 1].uf = dados_demandas[2];
-            demandas[numlinha - 1].tipo = dados_demandas[3];
-            demandas[numlinha - 1].d = stringtofloat(dados_demandas[4]);
-            demandas[numlinha - 1].o = stringtofloat(dados_demandas[4]);
-        }
-        numlinha++;
-    }
-    infile.close();
-    demandas.resize(demandas.size() - 1 );
-
-    return demandas;
-}
-
-
-
-GRAFO criar_grafo() {
+GRAFO criar_grafo(  vector<VERTICE> vertices_completo = {}, \
+                    vector<ARCO> grafo_completo = {}, \
+                    vector<DEMANDA> demandas = {}) {
     GRAFO grafo;
-    vector<ARCO> grafo_completo;
+//    vector<ARCO> grafo_completo;
+//    vector<VERTICE> vertices_completo;
+//    vector<DEMANDA> demandas;
     std::map<vector<string>, ARCO> grafo_completo_dic;
     std::map<vector<string>, unsigned int> grafo_completo_idx;
     vector<ARCO_SIMPLES> grafo_simples;
     std::map<vector<string>, ARCO_SIMPLES> grafo_simples_dic;
     std::map<vector<string>, unsigned int> grafo_simples_idx;
-    vector<VERTICE> vertices_completo;
     std::map<string,VERTICE> vertices_completo_dic;
     vector<string> vertices;
-    vector<DEMANDA> demandas;
     std::map<vector<string>,DEMANDA> demandas_dic;
 
     int qnt_arcos_localidade = 0;
     int qnt_arcos_transporte = 0;
     // criar grafo_completo a partir do arquivo de dados
-    vertices_completo = ler_csv_vertices(caminho + "vertices_completo.csv");
-    grafo_completo = ler_csv_grafo(caminho + "arcos_consolidados.csv");
-    demandas = ler_csv_demandas(caminho + "demandas_fornecimento.csv");
+    if(vertices_completo.empty() and grafo_completo.empty() and demandas.empty()){
+        vertices_completo = ler_csv_vertices(caminho + "vertices_completo.csv");
+        grafo_completo = ler_csv_grafo(caminho + "arcos_consolidados.csv");
+        demandas = ler_csv_demandas(caminho + "demandas_fornecimento.csv");
+//    vertices_completo = ler_csv_vertices(caminho + "dados_comp_vertices.csv");
+//    grafo_completo = ler_csv_grafo(caminho + "dados_comp_arcos.csv");
+//    demandas = ler_csv_demandas(caminho + "dados_comp_dem_forn.csv");
+    }
 
     // tranforma o vertices_completo em um dicionário para consulta por nós e salva uma lista com os vértices
     for (VERTICE &vertice : vertices_completo) {
@@ -528,7 +903,8 @@ GRAFO criar_grafo() {
     }
 
     // tranforma "demandas" em um dicionário para consulta por "nó, sku" e salva uma lista com os vértices
-    for (DEMANDA &demanda: demandas) {
+    for (int i = 0; i < int(demandas.size()); ++i) {
+        DEMANDA demanda = demandas[i];
         vector<string> key = {demanda.vertice, demanda.s};
         demandas_dic[key] = demanda;
 //        vertices.push_back(demanda.demanda);
@@ -691,7 +1067,8 @@ map<string,string> definir_variaveis(IloEnv env, GRAFO grafo) {
             value = "y_(" + arco + ")";
         }else{
             idx_uf = i - qnt_loc - qnt_arcos;
-            string uf = grafo.completo[idx_uf].i;
+//            string uf = grafo.completo[idx_uf].i;
+            string uf = UFs[idx_uf];
             key = "IloNumVar(" + to_string(i) + ")";
             value = "z_(" + uf + ")";
         }
@@ -846,9 +1223,42 @@ string refiner(IloEnv &env, IloModel model, IloCplex cplex,
 }
 
 int flow(){
-    GRAFO grafo;
     IloEnv env;
-    grafo = criar_grafo();
+    GRAFO grafo = GRAFO();
+//    grafo.find_components();
+    grafo.find_cycles();
+
+    cout << "COMPONENTES" << endl;
+    for(GRAFO g: grafo.subgrafos){
+        if(g.tipo == tipo_grafo::componente){
+            for(string v: g.vertices){
+                cout << v << " \t ";
+            }
+            cout << "" << endl;
+        }
+    }
+
+    cout << endl << "CICLOS" << endl;
+    for(GRAFO g: grafo.subgrafos){
+        if(g.tipo == tipo_grafo::ciclo){
+            cout << "" << endl;
+            for(string v: g.vertices){
+                cout << v << " \t ";
+            }
+        }
+    }
+    cout << endl ;
+
+    // DEBUG
+//    find_components(grafo);
+//    for(pair<const VERTICE, vector<VERTICE>> c: components){
+//        cout << "" << endl;
+//        cout << "ROOT: " << c.first.vertice << endl;
+//        for(VERTICE v: c.second){
+//            cout << v.vertice << " \t ";
+//        }
+//    }
+//    cout << endl ;
 
     try {
         definir_constantes(env, grafo);
@@ -962,8 +1372,8 @@ int flow(){
         if (cplex.getStatus() == IloAlgorithm::Infeasible){
             env.out() << "No Solution" << endl;
             cout << "POSSÍVEL CONFLITO:" << endl;
-            string conflict = refiner(env,model,cplex);
-            cout << conflict << endl;
+            string conflict = refiner(env,model,cplex,false,false);
+//            cout << conflict << endl;
             cout << replace_vars(conflict,dic_var) << endl;
         }
 
