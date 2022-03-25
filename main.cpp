@@ -584,18 +584,17 @@ struct GRAFO{
 
     void unblock(VERTICE &v){
         blocked[v.vertice] = false;
-        print_vectors();
         for(VERTICE w: blocked_map[v.vertice]){
            blocked_map.erase(w.vertice);
            if(blocked[w.vertice] == true) unblock(w);
         }
-        print_blocked_map();
+        print_vectors();
     }
 
     bool cycle(VERTICE &v){
         bool f = false;
         cycle_candidate.push_back(v);
-        print_cycle_candidate();
+        print_vectors();
 
         blocked[v.vertice] = true;
         print_vectors();
@@ -612,24 +611,22 @@ struct GRAFO{
         // L2
         if(f){
             unblock(v);
-            print_vectors();
+            print_vectors("unblock");
         }else{
             for(VERTICE w: dest_de(v)){
                 for(VERTICE u: blocked_map[w.vertice]){
                     if(u == v) blocked_map[w.vertice].push_back(v);
-                    print_blocked_map();
+                    print_vectors("add blocked map");
                 }
             }
         }
         cycle_candidate.pop_back();
-        print_cycle_candidate();
+        print_vectors();
         return f;
     }
 
-    void print_cycle_candidate() {
-    }
-
-    void print_vectors() {
+    void print_vectors(string msg = "") {
+        cout << msg << endl;
         //print do cycle_candidate
         cout << "Candidato: \t[" ;
         for(VERTICE vc: cycle_candidate) cout << vc.vertice << ", ";
@@ -642,7 +639,7 @@ struct GRAFO{
         cout << "]" << endl;
         // print blocked_map
         cout << "Block_map: \t[";
-        for(pair<const string,vector<VERTICE>> p: blocked_map){
+        for(const pair<const string,vector<VERTICE>>& p: blocked_map){
 //            if(!p.second.empty()){
             if(true){
                 cout << "(" << p.first << ": ";
@@ -656,10 +653,8 @@ struct GRAFO{
         cout << endl;
     }
 
-    void print_blocked_map() {// print blocked_map
-    }
 
-    void print_subg(GRAFO &subg) const {//print subgrafo
+    static void print_subg(GRAFO &subg) {//print subgrafo
         cout << "Subgrafo: \t[";
         for(VERTICE v: subg.vertices_completo) cout << v.vertice << ",";
         cout << "]" << endl;
