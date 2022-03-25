@@ -465,7 +465,7 @@ struct GRAFO{
     }
 
     //adicionar um subgrafo ao grafo.
-    void add_subgrafo(tipo_grafo tg, vector<VERTICE> sub_vertices){
+    void add_subgrafo(tipo_grafo tg, vector<VERTICE> &sub_vertices){
         vector<ARCO> sub_arcos;
         vector<DEMANDA> sub_demanda;
         for (ARCO a: GRAFO::completo) {
@@ -488,11 +488,11 @@ struct GRAFO{
         subgrafos.push_back(subgrafo);
     }
 
-    vector<VERTICE> visited;
-    stack<VERTICE> finished_stack;
-    set<VERTICE> finished_set;
-    vector<VERTICE> assigned;
-    map<VERTICE, vector<VERTICE>> components;
+    vector<VERTICE> visited = {};
+    stack<VERTICE> finished_stack = {};
+    set<VERTICE> finished_set = {};
+    vector<VERTICE> assigned = {};
+    map<VERTICE, vector<VERTICE>> components = {};
 
     void visit(VERTICE &u){
         if (find(visited.begin(), visited.end(), u) == visited.end() ) {
@@ -582,51 +582,8 @@ struct GRAFO{
     map<string,vector<VERTICE>> blocked_map = {};
     VERTICE s;
 
-    void unblock(VERTICE &v){
-        blocked[v.vertice] = false;
-        for(VERTICE w: blocked_map[v.vertice]){
-           blocked_map.erase(w.vertice);
-           if(blocked[w.vertice] == true) unblock(w);
-        }
-        print_vectors();
-    }
-
-    bool cycle(VERTICE &v){
-        bool f = false;
-        cycle_candidate.push_back(v);
-        print_vectors();
-
-        blocked[v.vertice] = true;
-        print_vectors();
-        // L1
-        for(VERTICE &w: dest_de(v)){
-            if(w == s){ // s: inicio do caminho. Se w == s => ciclo encontrado.
-                vector<VERTICE> vertices_do_ciclo;
-                for(VERTICE i: cycle_candidate) vertices_do_ciclo.push_back(i);
-                add_subgrafo(tipo_grafo::ciclo, vertices_do_ciclo);
-            }else if(!blocked[w.vertice]){
-                if(cycle(w)) f = true;
-            }
-        }
-        // L2
-        if(f){
-            unblock(v);
-            print_vectors("unblock");
-        }else{
-            for(VERTICE w: dest_de(v)){
-                for(VERTICE u: blocked_map[w.vertice]){
-                    if(u == v) blocked_map[w.vertice].push_back(v);
-                    print_vectors("add blocked map");
-                }
-            }
-        }
-        cycle_candidate.pop_back();
-        print_vectors();
-        return f;
-    }
-
     void print_vectors(string msg = "") {
-        cout << msg << endl;
+        if(msg != "") cout << "** " << msg << " **" << endl;
         //print do cycle_candidate
         cout << "Candidato: \t[" ;
         for(VERTICE vc: cycle_candidate) cout << vc.vertice << ", ";
@@ -645,53 +602,100 @@ struct GRAFO{
                 cout << "(" << p.first << ": ";
                 for(VERTICE sec: p.second){
                     cout << sec.vertice << ", ";
-            }
-            cout << ") ";
+                }
+                cout << ") ";
             }
         }
         cout << "]" << endl;
         cout << endl;
     }
 
-
     static void print_subg(GRAFO &subg) {//print subgrafo
-        cout << "Subgrafo: \t[";
+        cout << "SUBGRAFO: \t[";
         for(VERTICE v: subg.vertices_completo) cout << v.vertice << ",";
         cout << "]" << endl;
     }
 
+    void unblock(VERTICE &v){
+        blocked[v.vertice] = false;
+        for(VERTICE w: blocked_map[v.vertice]){
+           blocked_map.erase(w.vertice);
+           if(blocked[w.vertice] == true) unblock(w);
+        }
+        print_vectors("unblock");
+    }
+
+    bool cycle(VERTICE &v){
+        bool f = false;
+        cycle_candidate.push_back(v);
+        blocked[v.vertice] = true;
+        print_vectors("novo vertice no candidato");
+        // L1
+        for(VERTICE &w: dest_de(v)){
+            if(w == s){ // s: inicio do caminho. Se w == s => ciclo encontrado.
+                vector<VERTICE> vertices_do_ciclo;
+                for(VERTICE i: cycle_candidate) vertices_do_ciclo.push_back(i);
+                add_subgrafo(tipo_grafo::ciclo, vertices_do_ciclo);
+            }else if(!blocked[w.vertice]){
+                if(cycle(w)) f = true;
+            }
+        }
+        // L2
+        if(f){
+            unblock(v);
+            print_vectors("unblock");
+        }else{
+            for(VERTICE w: dest_de(v)){
+                for(VERTICE u: blocked_map[w.vertice]){
+                    if(u == w) blocked_map[w.vertice].push_back(v);
+                    print_vectors("add blocked map");
+                }
+            }
+        }
+        cycle_candidate.pop_back();
+        print_vectors();
+        return f;
+    }
+
+
+
     void find_cycles(){
+        //todo: retirar ciclos iguais mas que iniciam em vertices diferentes.
         find_components();
+        //seleciona apenas os subgrafos do tipo componente.
+        vector<GRAFO> componentes;
+        for(GRAFO subg: subgrafos) {
+            if (subg.tipo == tipo_grafo::componente) componentes.push_back(subg);
+        }
+
         //main loop (while do no artigo)
-        for(GRAFO subg: subgrafos){
+        for(GRAFO comp: componentes){
+            if(comp.tipo != tipo_grafo::componente) return;
             cycle_candidate = {}; //limpar stack.
             s = {};
-            if(subg.tipo == tipo_grafo::componente){
-                for(const VERTICE& vertice: subg.vertices_completo) {
-                    print_subg(subg);
-                    s = vertice;
-                    //print vertice origem s.
-                    cout << "Inicio: \t" << s.vertice << endl;
-                    //verifica se o vertice s pertence ao grafo subg, se não pertencer, encerra o main loop
-//                    bool sg = false;
-//                    for (VERTICE v: subg.vertices_completo) {
-//                        if (s == v) {
-//                            sg = true;
-//                            break;
-//                        }
+            for(const VERTICE& vertice: comp.vertices_completo) {
+                print_subg(comp);
+                s = vertice;
+                //print vertice origem s.
+                cout << "Inicio: \t" << s.vertice << endl;
+                //verifica se o vertice s pertence ao grafo comp, se não pertencer, encerra o main loop
+//                bool sg = false;
+//                for (VERTICE v: comp.vertices_completo) {
+//                    if (s == v) {
+//                        sg = true;
+//                        break;
 //                    }
-//                    if(!sg) return;
+//                }
+//                if(!sg) return;
 
-                    for(VERTICE i: subg.vertices_completo){
-                        // limpa os vetores antes de iniciar outro circuito
-                        blocked[i.vertice] = false;
-                        blocked_map[i.vertice] = {};
-                    }
-                    print_vectors();
-                    bool dummy = cycle(s);
-                    if(dummy){}
+                for(VERTICE i: comp.vertices_completo){
+                    // limpa os vetores antes de iniciar outro circuito
+                    blocked[i.vertice] = false;
+                    blocked_map[i.vertice] = {};
                 }
-
+                print_vectors();
+                bool dummy = cycle(s);
+                if(dummy){}
             }
         }
 
