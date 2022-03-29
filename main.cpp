@@ -17,7 +17,7 @@ using namespace std;
 //static string caminho = "F:\\OneDrive\\_each\\_Quali\\Artigo\\modelocpp\\";
 
 //caminho wsl
-static string caminho = "/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/";
+static string caminho = "/mnt/f/OneDrive/_each/_Quali/Artigo/artigo/";
 
 //bool DEBUG = 1;
 bool DEBUG = true;

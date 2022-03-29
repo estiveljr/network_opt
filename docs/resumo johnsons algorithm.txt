@@ -1,0 +1,11 @@
+1 - encontrar subgrafos que sao fortemente conectados (strongly conected graph), usar Kosaraju's algorithm que é O(n+v).
+2 - criar listas auxiliares: 
+	a. stack (deque cycle_candidate): guardar possível ciclo
+	b. blocked set: guarda os vertices que já foram visitados e que foram um "caminho sem saída"
+	c. block map: grupo de pares usado quando um vértice é desbloqueado, ex: i -> j, se i é desbloqueado, j também é desbloqueado
+	d. ciclos: guarda os ciclos encontrados. 
+	e. lista dos vizinhos de cada vértice (i,j),(i,k)...(i,n) for all i
+
+
+
+dúvida: quando um vertice é retirado da stack, e já pertence a um ciclo, ele tbm é retirado da lista de block. mas quais ciclos eu devo olhar? o último ou todos? (eu acho que é só o último)

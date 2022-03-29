@@ -1,3 +1,0 @@
-/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-release/CMakeFiles/rebuild_cache.dir
-/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-release/CMakeFiles/edit_cache.dir
-/mnt/f/OneDrive/_each/_Quali/Artigo/modelocpp/cmake-build-release/CMakeFiles/modelocpp.dir
