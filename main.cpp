@@ -23,7 +23,7 @@ using namespace std;
 //static string caminho = "/mnt/f/OneDrive/_each/_Quali/artigo/";
 static string caminho = filesystem::current_path().string() + "/";
 
-bool DEBUG = false;
+bool DEBUG = true;
 
 auto start_time = chrono::high_resolution_clock::now();
 auto last_time = start_time;
@@ -138,6 +138,8 @@ vector<ARCO> ler_csv_grafo(const std::string &nome_arquivo, const std::string de
         ARCO arco;
         grafo.push_back(arco);
         string dados_arco[10];
+
+        //read columns
         int item_arco = 0;
         do {
             pos = line.find(delimiter);
@@ -363,7 +365,7 @@ struct GRAFO{
         demandas = demandas_comp;
         std::map<vector<string>, ARCO> grafo_completo_dic;
         std::map<vector<string>, unsigned int> grafo_completo_idx;
-        vector<ARCO_SIMPLES> grafo_simples; // i
+        vector<ARCO_SIMPLES> grafo_simples; // i: products not consider
         vector<ARCO_SIMPLES> grafo_simples_loc; // ij apenas para location
         std::map<vector<string>, ARCO_SIMPLES> grafo_simples_dic;
         std::map<vector<string>, unsigned int> grafo_simples_idx;
@@ -808,15 +810,23 @@ void definir_constantes(IloEnv env, GRAFO grafo) {
 
 IloBoolVarArray x,w;
 IloNumVarArray y, z;
-map<string,string> definir_variaveis(IloEnv env, GRAFO grafo) {
+auto definir_variaveis(IloEnv env, GRAFO grafo) {
     x = IloBoolVarArray(env,grafo.qnt_localidades);
     w = IloBoolVarArray(env,grafo.qnt_arcos);
     y = IloNumVarArray(env, grafo.qnt_arcos, 0, IloInfinity);
     z = IloNumVarArray(env, 27, 0, IloInfinity);
+//    z = IloNumVarArray();
+//    for(const string uf:UFs){
+//        z.add(IloNumVar(env,"name"));
+//    }
 
     //Constroi dicionário para encontrar o nome das variáveis no modelo.
     map<string,string> dic_var;
-    size_t qnt_var = grafo.qnt_localidades + grafo.qnt_arcos * 2 + 27;
+    map<string,string> dic_var_modelo;
+    struct ret_values{
+        map<string,string> dic_var, dic_var_modelo;
+    };
+    size_t qnt_var = grafo.qnt_localidades + (grafo.qnt_arcos * 2) + 27;
     size_t qnt_loc = size_t(grafo.qnt_localidades);
     size_t qnt_arcos = size_t(grafo.qnt_arcos);
     string key;
@@ -839,7 +849,7 @@ map<string,string> definir_variaveis(IloEnv env, GRAFO grafo) {
             key = "IloBoolVar(" + to_string(i) + ")";
             value = "w_(" + arco + ")";
             idx_w++;
-        }else if(i < qnt_arcos * 2 + qnt_loc){
+        }else if(i < (qnt_arcos * 2) + qnt_loc){
             string arco = grafo.completo[idx_y].i;
             arco += ", " + grafo.completo[idx_y].j;
             arco += ", " + grafo.completo[idx_y].s;
@@ -853,10 +863,12 @@ map<string,string> definir_variaveis(IloEnv env, GRAFO grafo) {
             idx_z++;
         }
         dic_var.insert(pair<string,string>(key, value));
+        dic_var_modelo.insert(pair<string,string>("x" + to_string(i + 1), value));
     }
 
     // salva de para com o nome das variáveis em arquivo.
     ofstream de_para_vars("dados/debug/de_para_vars.txt");
+    // bool vars
     for (size_t idx = 0; idx < qnt_loc + qnt_arcos; idx++){
         string vkey = "IloBoolVar(" + to_string(idx) + ")";
 //        cout << vkey << " -> " << dic_var[vkey] <<endl;
@@ -870,8 +882,7 @@ map<string,string> definir_variaveis(IloEnv env, GRAFO grafo) {
     }
     de_para_vars.close();
 
-
-    return dic_var;
+    return ret_values{dic_var, dic_var_modelo};
 }
 
 vector<string> split(string str, string separator, vector<string> splited_str = {}){
@@ -1023,21 +1034,25 @@ int flow(bool baseline = false,
          string data_name = ""){
 
     // Print of program configurations
+    print_running_time("Starting program");
     cout << "SETUP" << endl;
     cout << "baseline: \t" << to_string(baseline) << endl;
-    cout << "find cycles: \t" << to_string(find_cycles) << endl << endl;
+    cout << "find cycles: \t" << to_string(find_cycles) << endl;
+    cout << "debug: \t\t" << DEBUG << endl;
+    cout << endl;
 
     IloEnv env;
-    cout << "Starting data reading" << endl;
+    print_running_time("Starting data reading");
+//    cout << "Starting data reading" << endl;
     GRAFO grafo = GRAFO(data_name);
     // Print of graphs totals
     cout << "Data name: " << data_name << endl;
-    cout << "Total nodes: \t\t" << to_string(grafo.qnt_vertices) << endl;
-    cout << "Total arcs: \t\t" << to_string(grafo.qnt_arcos) << endl;
-    cout << "Total locations arcs: \t" << to_string(grafo.qnt_arcos_localidade) << endl;
-    cout << "Total transp arcs: \t" << to_string(grafo.qnt_arcos_transporte) << endl;
-    cout << "Total locations: \t" << to_string(grafo.qnt_localidades) << endl;
-    cout << "Total products: \t" << to_string(grafo.qnt_produtos) << endl;
+    cout << "Nodes: \t\t" << to_string(grafo.qnt_vertices) << endl;
+    cout << "Arcs: \t\t" << to_string(grafo.qnt_arcos) << endl;
+    cout << "Location arcs: \t" << to_string(grafo.qnt_arcos_localidade) << endl;
+    cout << "Transp arcs: \t" << to_string(grafo.qnt_arcos_transporte) << endl;
+    cout << "Locations: \t" << to_string(grafo.qnt_localidades) << endl;
+    cout << "Products: \t" << to_string(grafo.qnt_produtos) << endl;
 
     print_running_time("Data reading end");
     cout << endl << "Model construction start" << endl;
@@ -1068,7 +1083,10 @@ int flow(bool baseline = false,
     try {
         definir_constantes(env, grafo);
         map<string,string> dic_var;
-        dic_var = definir_variaveis(env, grafo);
+        map<string,string> dic_var_modelo;
+        auto dics_var = definir_variaveis(env, grafo);
+        dic_var = dics_var.dic_var;
+        dic_var_modelo = dics_var.dic_var_modelo;
 
         IloModel model(env);
         // constantes para as variáveis auxiliares z
@@ -1079,17 +1097,18 @@ int flow(bool baseline = false,
 
         debug("TOTAL DE CONSTANTES E VARIÁVEIS");
         debug("a: ", to_string(a.getSize()));
+        debug("c: ", to_string(c.getSize()));
         debug("x: ", to_string(x.getSize()));
         debug("b: ", to_string(b.getSize()));
         debug("y: ", to_string(y.getSize()));
+        debug("z: ", to_string(z.getSize()));
 
         // Objective Function: Minimize Cost
-
         model.add(IloMinimize(env,
                               IloScalProd(a, x) +
                               IloSum(w) +
                               IloScalProd(b, y) +
-                              IloSum(z)));
+                              IloScalProd(ones, z)));
 
 
         // retrição de balanço de massa
@@ -1131,22 +1150,22 @@ int flow(bool baseline = false,
         }
 
         // restrição de capacidade e alocação de custo fixo
-        for(ARCO_SIMPLES arco : grafo.simples){
+        for(const ARCO_SIMPLES& arco : grafo.simples){
             if(arco.tipo_de_arco == "location"){
                 string i = arco.i;
                 string j = arco.j;
-                float c;
-                IloNumVarArray y_sum = IloNumVarArray(env);
-                for (string s : grafo.produtos){
-                    int index = grafo.completo_idx[{i,j,s}];
+                float cap;
+                auto y_sum = IloNumVarArray(env);
+                for (const string& s : grafo.produtos){
+                    auto index = grafo.completo_idx[{i,j,s}];
                     y_sum.add(y[index]);
                 }
                 if(isnan(arco.c)){
-                    c = grafo.bigM;
+                    cap = grafo.bigM;
                 }else{
-                    c = arco.c;
+                    cap = arco.c;
                 }
-                model.add(IloSum(y_sum) <= c*x[arco.index]);
+                model.add(IloSum(y_sum) <= cap * x[arco.index]);
             }
         }
 
@@ -1225,8 +1244,79 @@ int flow(bool baseline = false,
         cplex.setParam(IloCplex::Param::Threads, 8);
 //        cplex.setOut(env.getNullStream());
         cplex.setWarning(env.getNullStream());
+        //dumping model and fixing variable names in model file.
 //        cplex.extract(model);
-//        cplex.exportModel("dados/debug/modelo.lp");
+        cplex.exportModel("dados/debug/modelo.lp");
+        fstream model_file;
+        string model_file_str;
+        string word;
+        model_file.open("dados/debug/modelo.lp");
+        string init;
+        string tmp_str_word;
+        string tmp_str_whitespace;
+        unsigned long line_size = 0;
+        unsigned int line_limit;
+        unsigned int word_count;
+        unsigned int word_limit = 100;
+        char line;
+        if(model_file.is_open()){
+            while(true){
+                line_limit = 100;
+                init = "";
+                tmp_str_whitespace = char(32);
+                model_file >> word;
+                model_file.get(line);
+                if(word == "End") break; //end of model
+                if(word == "Bounds") word_limit = 5;
+                if(word == "Binaries") word_limit = 100;
+                // replace variable x if its in dic
+                if(word.at(0) == 'x'){
+                    if(!dic_var_modelo[word].empty()){
+                        tmp_str_word = dic_var_modelo[word];
+                    }else{
+                        tmp_str_word = "ERROR";
+                    }
+                }else{
+                    tmp_str_word = word;
+                }
+                //limit line by words and chars
+                if(line_size <= line_limit and word_count <= word_limit){
+                    line_size += tmp_str_word.length() + tmp_str_whitespace.length();
+                    word_count++;
+                }else{
+                    tmp_str_whitespace = "\n";
+                    line_size = 0;
+                    word_count = 0;
+                }
+                //key words breakline
+                if((word.front() == 'c' and word.back() == ':') or //constraints
+                    word == "IloCplex" or
+                    word == "Minimize" or
+                    word == "Binaries" or
+                    word == "Bounds"
+                        ){
+                    init = "\n";
+                    tmp_str_whitespace = "\n";
+                    line_size = 0;
+                    word_count = 0;
+                }
+                //key words whitespace breakline
+                if( word == "To" or
+                    word == "1"
+                        ){
+                    tmp_str_whitespace = "\n";
+                    word_count = 0;
+                    line_size = 0;
+                }
+                model_file_str += init; //breakline for keywords
+                model_file_str += tmp_str_word;
+                model_file_str += tmp_str_whitespace;
+            }
+            model_file.close();
+            model_file.open("dados/debug/modelo_convertido.lp");
+            model_file << model_file_str;
+            model_file.close();
+        }
         cplex.solve();
         print_running_time("Optimization end");
 
@@ -1259,13 +1349,15 @@ int flow(bool baseline = false,
         for(ARCO_SIMPLES arco : grafo.simples){
             if(arco.tipo_de_arco == "location"){
                 //convert to portuguese number delimiter.
-                string vol_loc = to_string(cplex.getValue(x[indice_localidade]));
+                string vol_loc = to_string(abs(cplex.getValue(x[indice_localidade])));
                 if(vol_loc.find(".") < 1e20) vol_loc.replace(vol_loc.find("."),1,",");
+                vol_loc = vol_loc[0];
                 //print terminal
                 env.out() << arco.i + " -> " + arco.j + " (cap: " << + arco.c <<  ")"
                 << " (" << grafo.vertices_completo_dic[arco.i].uf << "):  "
-                << vol_loc
-                << endl;
+                << vol_loc;
+                if(vol_loc == string("1")) cout << "\t <<<";
+                cout << endl;
 
                 //saving into csv
                 if (indice_localidade == 0){
@@ -1292,12 +1384,17 @@ int flow(bool baseline = false,
         }
         ofstream csv_saldos (caminho + nome_arquivo_saldos);
         csv_saldos << "UF;Saldo" << endl;
+        int valor_saldo_num = 0;
+        int total_icms = 0;
         string valor_saldo;
         for(int u = 0; u < 27; u++){
-           string valor_saldo = to_string(cplex.getValue(z[u]));
-           env.out() << UFs[u] << " -> " << cplex.getValue(z[u]) << endl;
-           csv_saldos << UFs[u] << ";" << cplex.getValue(z[u]) << endl;
+            valor_saldo_num = cplex.getValue(z[u]);
+            total_icms += valor_saldo_num;
+            string valor_saldo = to_string(valor_saldo_num);
+            env.out() << UFs[u] << " -> " << valor_saldo << endl;
+            csv_saldos << UFs[u] << ";" << valor_saldo << endl;
         }
+        cout << "Total ICMS: " << total_icms << endl;
         csv_saldos.close();
 
         cout << "Salvando fluxos" << endl;
@@ -1331,12 +1428,36 @@ int flow(bool baseline = false,
     return 0;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    string loop_input;
+    // read arguments and define scenario.
+    string data_name;
+    data_name = "teste_";
     float time_limit_sec = 10*60;
-//    flow(false, false, time_limit_sec, "sem_prodepe_");
-    flow(false, false, time_limit_sec, "com_prodepe_");
-//    flow(false, false, time_limit_sec, "merc10_");
-//    flow(false, false, 1*60, "_teste");
+//    data_name = "sem_prodepe_";
+//    data_name = "com_prodepe_";
+//    data_name = "merc10_";
+    if (argc > 0){
+        for(int i = 0; i < argc; i++){
+            cout << i << ": ";
+            cout << argv[i]<< endl;
+            if(argv[i] == string("-c")){
+                data_name = argv[i + 1];
+            }else if(argv[i] == string("-t")){
+                time_limit_sec = stof(argv[i+1]);
+            }
+        }
+    }
+
+    while(true){
+        flow(false, false, time_limit_sec,data_name);
+        cout << "Press \"s\" to run again" << endl;
+        cin >> loop_input;
+        if(loop_input != "s"){
+            cout << "Exiting Program" << endl;
+            break;
+        }
+    }
 
 //    DEBUG
 //    string str = " -1 * IloNumVar(37)[0 .. inf]  == -0 == 10";
