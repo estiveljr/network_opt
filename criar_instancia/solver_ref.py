@@ -97,7 +97,7 @@ if __name__ == '__main__':
             input_data = input_data_file.read()
         output_data = solve_it(input_data)
         print(output_data)
-        solution_file = open(file_location + ".sol", "w")
+        solution_file = open(file_location + ".sol", "w_ptr")
         solution_file.write(output_data)
         solution_file.close()
     else:

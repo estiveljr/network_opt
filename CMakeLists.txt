@@ -17,16 +17,19 @@ if(WSL)
 #    set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -lilocplex -lconcert -lcplex -lm -lpthread")
     set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -std=c++17 -LD_DEBUG=all")
 
-    set(CMAKE_CXX_FLAGS_DEBUG           "${CMAKE_CXX_FLAGS_DEBUG} -std=c++17 -O0 -ggdb -gdwarf-3")
+
+    set(CMAKE_CXX_FLAGS_DEBUG           "${CMAKE_CXX_FLAGS_DEBUG} -std=c++17 -O0 -ggdb3 -gdwarf-3")
 else()
     set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -std=c++17 -DIL_STD -Wall")
 
     set(CMAKE_CXX_FLAGS_DEBUG           "${CMAKE_CXX_FLAGS_DEBUG} -std=c++17 -O0")
-    #set(CMAKE_CXX_FLAGS_DEBUG           "${CMAKE_CXX_FLAGS_DEBUG} -Og -ggdb")
+    #set(CMAKE_CXX_FLAGS_DEBUG           "${CMAKE_CXX_FLAGS_DEBUG} -Og -ggdb3")
 endif()
 cmake_print_variables(WSL)
 cmake_print_variables(CMAKE_CXX_FLAGS)
 #set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -std=c++17 -DIL_STD -m64 -Wall -Werror")
+
+
 
 
 

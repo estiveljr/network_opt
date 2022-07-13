@@ -1,0 +1,7 @@
+﻿tipo_de_arco;i;j;s;a;b;c;m;n;vol
+transportation;A-out;Ain;S;0;0;100;0;12;0
+location;Ain;Aout;S;0;0;100;0;0;0
+transportation;Aout;Bint;S;0;0;100;10;10;0
+transportation;Bout;Ain;S;0;0;100;7;7;0
+location;Bint;Bout;S;0;0;100;0;0;0
+transportation;Bout;B+in;S;0;0;100;17;0;0

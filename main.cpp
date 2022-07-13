@@ -52,25 +52,29 @@ enum tipo_grafo{
 
 struct ARCO {
     int index;
-    string tipo_de_arco = "";
-    string i = ""; //entrada da location ou origem da rota
-    string j = ""; //saida da location ou destino da rota
-    string s = ""; // sku
+    string tipo_de_arco;
+    string i; //entrada da location ou origem da rota
+    string j; //saida da location ou destino da rota
+    string s; // sku
     float a = 0; // CF
     float b = 0 ; // CVL + icmsst + custos_fonecimento
     float c = 0 ; // capacidade do arco
     float m = 0 ; // icms - cred_pres + difal
     float n = 0 ; // icms * (1 - anulacao)
     float v = 0 ; // volume do fluxo (usado no baseline)
+    IloBoolVar* w_ptr = nullptr; // initialize pointer for w_ptr model var
+    IloNumVar* y_ptr = nullptr; // initialize pointer for y_ptr model var
 };
 
 struct ARCO_SIMPLES{
-    int index;
-    string tipo_de_arco = "";
-    string i = ""; //entrada da location ou origem da rota
-    string j = ""; //saida da location ou destino da rota
+    int index = 0;
+    string tipo_de_arco;
+    string i; //entrada da location ou origem da rota
+    string j; //saida da location ou destino da rota
     float a = 0;
-    float c= 0;
+    float c = 0;
+    IloBoolVar *x_ptr = nullptr; //initializer null pointer for model var.
+//    IloBoolVar &x = *x_ptr; // cant be used because the reference.
 };
 
 struct VERTICE{
@@ -109,6 +113,7 @@ struct DEMANDA{
     double d;
     double o;
 };
+
 
 float stringtofloat(std::string s){
     if (s.length() == 0) {
@@ -406,8 +411,7 @@ struct GRAFO{
         }
 
         // tranforma "demandas" em um dicionário para consulta por "nó, sku" e salva uma lista com os vértices
-        for (int i = 0; i < int(demandas.size()); ++i) {
-            DEMANDA demanda = demandas[i];
+        for (const auto& demanda : demandas) {
             vector<string> key = {demanda.vertice, demanda.s};
             demandas_dic[key] = demanda;
 //        vertices.push_back(demanda.demanda);
@@ -421,10 +425,10 @@ struct GRAFO{
         }
 
         // quantidades de cada tipo de arco
-        for (int arco = 0; arco < (int) completo.size(); arco++){
-            if (completo[arco].tipo_de_arco == "location"){
+        for (auto & arco : completo){
+            if (arco.tipo_de_arco == "location"){
                 ++qnt_arcos_localidade;
-            }else if (completo[arco].tipo_de_arco == "transportation"){
+            }else if (arco.tipo_de_arco == "transportation"){
                 ++qnt_arcos_transporte;
             }
         }
@@ -692,7 +696,7 @@ struct GRAFO{
         print_vectors("novo vertice no candidato");
         // L1
         for(VERTICE &w: dest_de(v)){
-            if(w == s){ // s: inicio do caminho. Se w == s => ciclo encontrado.
+            if(w == s){ // s: inicio do caminho. Se w_ptr == s => ciclo encontrado.
                 vector<VERTICE> vertices_do_ciclo;
                 for(VERTICE i: cycle_candidate) vertices_do_ciclo.push_back(i);
                 add_subgrafo(tipo_grafo::ciclo, vertices_do_ciclo);
@@ -810,15 +814,20 @@ void definir_constantes(IloEnv env, GRAFO grafo) {
 
 IloBoolVarArray x,w;
 IloNumVarArray y, z;
-auto definir_variaveis(IloEnv env, GRAFO grafo) {
-    x = IloBoolVarArray(env,grafo.qnt_localidades);
-    w = IloBoolVarArray(env,grafo.qnt_arcos);
-    y = IloNumVarArray(env, grafo.qnt_arcos, 0, IloInfinity);
+auto definir_variaveis(IloEnv env, GRAFO *grafo) {
+    // The order matters for the variable declaration in cplex.
+    // The index var is by the order that variables are created.
+    x = IloBoolVarArray(env,grafo->qnt_localidades);
+    w = IloBoolVarArray(env,grafo->qnt_arcos);
+    y = IloNumVarArray(env, grafo->qnt_arcos, 0, IloInfinity);
     z = IloNumVarArray(env, 27, 0, IloInfinity);
-//    z = IloNumVarArray();
-//    for(const string uf:UFs){
-//        z.add(IloNumVar(env,"name"));
-//    }
+
+    // Defines names that will appear in model.lp file
+    x.setNames("X");
+    w.setNames("W");
+    y.setNames("Y");
+    z.setNames("Z");
+
 
     //Constroi dicionário para encontrar o nome das variáveis no modelo.
     map<string,string> dic_var;
@@ -826,35 +835,39 @@ auto definir_variaveis(IloEnv env, GRAFO grafo) {
     struct ret_values{
         map<string,string> dic_var, dic_var_modelo;
     };
-    size_t qnt_var = grafo.qnt_localidades + (grafo.qnt_arcos * 2) + 27;
-    size_t qnt_loc = size_t(grafo.qnt_localidades);
-    size_t qnt_arcos = size_t(grafo.qnt_arcos);
+    size_t qnt_var = grafo->qnt_localidades + (grafo->qnt_arcos * 2) + 27;
+    size_t qnt_loc = size_t(grafo->qnt_localidades);
+    size_t qnt_arcos = size_t(grafo->qnt_arcos);
     string key;
     string value;
-    size_t idx_x= 0;
-    size_t idx_w = 0;
-    size_t idx_y = 0;
-    size_t idx_z = 0;
+    long idx_x= 0;
+    long idx_w = 0;
+    long idx_y = 0;
+    long idx_z = 0;
     for (size_t i = 0; i < qnt_var; ++i) {
         if(i < qnt_loc){
-            string loc_simples = grafo.simples_loc[idx_x].i;
-            loc_simples += ", " + grafo.simples_loc[idx_x].j;
+            string loc_simples = grafo->simples_loc[idx_x].i;
+            loc_simples += ", " + grafo->simples_loc[idx_x].j;
             key = "IloBoolVar(" + to_string(i) + ")";
             value = "x_(" + loc_simples + ")";
+            grafo->simples_loc[idx_x].x_ptr = &x[idx_x]; //set model var index
+            grafo->simples[grafo->simples_loc[idx_x].index].x_ptr = &x[idx_x]; //set model var index
             idx_x++;
         }else if(i < qnt_arcos + qnt_loc){
-            string arco = grafo.completo[idx_w].i;
-            arco += ", " + grafo.completo[idx_w].j;
-            arco += ", " + grafo.completo[idx_w].s;
+            string arco = grafo->completo[idx_w].i;
+            arco += ", " + grafo->completo[idx_w].j;
+            arco += ", " + grafo->completo[idx_w].s;
             key = "IloBoolVar(" + to_string(i) + ")";
             value = "w_(" + arco + ")";
+            grafo->completo[idx_w].w_ptr = &w[idx_w];
             idx_w++;
         }else if(i < (qnt_arcos * 2) + qnt_loc){
-            string arco = grafo.completo[idx_y].i;
-            arco += ", " + grafo.completo[idx_y].j;
-            arco += ", " + grafo.completo[idx_y].s;
+            string arco = grafo->completo[idx_y].i;
+            arco += ", " + grafo->completo[idx_y].j;
+            arco += ", " + grafo->completo[idx_y].s;
             key = "IloNumVar(" + to_string(i) + ")";
             value = "y_(" + arco + ")";
+            grafo->completo[idx_y].y_ptr = &y[idx_y];
             idx_y++;
         }else{
             string uf = UFs[idx_z];
@@ -866,7 +879,7 @@ auto definir_variaveis(IloEnv env, GRAFO grafo) {
         dic_var_modelo.insert(pair<string,string>("x" + to_string(i + 1), value));
     }
 
-    // salva de para com o nome das variáveis em arquivo.
+    // salva de/para com o nome das variáveis em arquivo.
     ofstream de_para_vars("dados/debug/de_para_vars.txt");
     // bool vars
     for (size_t idx = 0; idx < qnt_loc + qnt_arcos; idx++){
@@ -1084,7 +1097,7 @@ int flow(bool baseline = false,
         definir_constantes(env, grafo);
         map<string,string> dic_var;
         map<string,string> dic_var_modelo;
-        auto dics_var = definir_variaveis(env, grafo);
+        auto dics_var = definir_variaveis(env, &grafo);
         dic_var = dics_var.dic_var;
         dic_var_modelo = dics_var.dic_var_modelo;
 
@@ -1100,7 +1113,7 @@ int flow(bool baseline = false,
         debug("c: ", to_string(c.getSize()));
         debug("x: ", to_string(x.getSize()));
         debug("b: ", to_string(b.getSize()));
-        debug("y: ", to_string(y.getSize()));
+        debug("y_ptr: ", to_string(y.getSize()));
         debug("z: ", to_string(z.getSize()));
 
         // Objective Function: Minimize Cost
@@ -1111,13 +1124,13 @@ int flow(bool baseline = false,
                               IloScalProd(ones, z)));
 
 
-        // retrição de balanço de massa
+        // restrição de balanço de massa
         for (VERTICE vertice: grafo.vertices_completo) {
             string j = vertice.vertice;
             DEBUG = false;
             debug("");
             debug("VERTICE: ", j);
-            debug(" tipo: ", vertice.tipo); //debug do tipo de vertice
+            debug(" tipo: ", vertice.tipo); //debug do tipo de vértice
             for (string s: grafo.produtos) {
                 debug(" PRODUTO: ", s);
                 auto y_entradas = IloNumVarArray(env);
@@ -1150,6 +1163,7 @@ int flow(bool baseline = false,
         }
 
         // restrição de capacidade e alocação de custo fixo
+        int x_index = 0;
         for(const ARCO_SIMPLES& arco : grafo.simples){
             if(arco.tipo_de_arco == "location"){
                 string i = arco.i;
@@ -1158,14 +1172,18 @@ int flow(bool baseline = false,
                 auto y_sum = IloNumVarArray(env);
                 for (const string& s : grafo.produtos){
                     auto index = grafo.completo_idx[{i,j,s}];
+//                    cout << "DEBUG y_ptr index: " << index << endl;
                     y_sum.add(y[index]);
+//                    y_sum.add(grafo.completo[index].y);
                 }
                 if(isnan(arco.c)){
                     cap = grafo.bigM;
                 }else{
                     cap = arco.c;
                 }
-                model.add(IloSum(y_sum) <= cap * x[arco.index]);
+                cout << "debug x: " << arco.index << endl;
+                model.add(IloSum(y_sum) <= cap * *arco.x_ptr);
+                x_index++;
             }
         }
 
@@ -1193,7 +1211,7 @@ int flow(bool baseline = false,
             model.add(z[u] >= deb - cred);
         }
 
-        //restrição de baseline
+        //restrição de baseline INCOMPLETA
         if(baseline){
             float buffer = 1;
             for(ARCO arco: grafo.completo){
@@ -1210,7 +1228,7 @@ int flow(bool baseline = false,
          *
          * onde:
          * C = {C' | C' é um ciclo}
-         * C'= {w}
+         * C'= {w_ptr}
          * w_ijs = {0,1 | ij isin ARCOS, s isin Prod }
          * w_ijs = binário que indica o se um determinado arco está sendo usado
         */
@@ -1220,11 +1238,11 @@ int flow(bool baseline = false,
 //            GRAFO& ciclo = subgrafo;
 //            size_t qnt_vertices = ciclo.qnt_vertices;
 //
-//            // seleciona as variáveis "w" e "y" que fazem parte do ciclo
+//            // seleciona as variáveis "w_ptr" e "y_ptr" que fazem parte do ciclo
 //            IloBoolVarArray w_sum;
 //            for(ARCO arco: ciclo.completo){
-//                w_sum.add(w[arco.index]);
-//                model.add(y[arco.index] <= ciclo.bigM * w[arco.index]);
+//                w_sum.add(w_ptr[arco.index]);
+//                model.add(y_ptr[arco.index] <= ciclo.bigM * w_ptr[arco.index]);
 //            }
 //            model.add(IloSum(w_sum) < qnt_vertices);
 //        }
