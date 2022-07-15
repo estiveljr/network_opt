@@ -6,6 +6,7 @@
 #include <limits>
 #include <map>
 #include <ilcplex/ilocplex.h>
+#include <ilcplex/ilocplexi.h>
 #include <variant>
 #include <algorithm>
 #include <stack>
@@ -48,6 +49,7 @@ enum tipo_grafo{
     original,
     ciclo,
     componente,
+    dummy,
 };
 
 struct ARCO {
@@ -127,7 +129,7 @@ float stringtofloat(std::string s){
 vector<ARCO> ler_csv_grafo(const std::string &nome_arquivo, const std::string delimiter = ";") {
     ifstream infile;
     string dados;
-    vector<ARCO> grafo; // cria um array com elemente do tipo ARCO, formando um grafo orientado.
+    vector<ARCO> grafo; // cria um array com elemente do tipo ARCO, formando um grafo_pai orientado.
 
     infile.open(nome_arquivo);
     if (!infile) {
@@ -156,7 +158,7 @@ vector<ARCO> ler_csv_grafo(const std::string &nome_arquivo, const std::string de
 
         // ALOCA DADOS DE CADA LINHA DO STREAM NO GRAFO
         if (numlinha != 0) {
-            grafo[numlinha - 1].index = numlinha - 1; //indice do arco no grafo
+            grafo[numlinha - 1].index = numlinha - 1; //indice do arco no grafo_pai
             grafo[numlinha - 1].tipo_de_arco = dados_arco[0];
             grafo[numlinha - 1].i = dados_arco[1];
             grafo[numlinha - 1].j = dados_arco[2];
@@ -345,25 +347,31 @@ struct GRAFO{
         return false;
     }
 
+
     explicit GRAFO( tipo_grafo tg = tipo_grafo::original,
                     const vector<VERTICE>& vertices_comp = {},
                     const vector<ARCO>& grafo_comp= {},
                     const vector<DEMANDA>& demandas_comp = {}) {
-        GRAFO("", tg, vertices_comp, grafo_comp, demandas_comp);
+        string data_name;
+        GRAFO(data_name, tg, vertices_comp, grafo_comp, demandas_comp);
     }
-    explicit GRAFO( const string& data_name = "",
+    explicit GRAFO( const string& data_name,
                     tipo_grafo tg = tipo_grafo::original,
                     const vector<VERTICE>& vertices_comp = {},
                     const vector<ARCO>& grafo_comp= {},
                     const vector<DEMANDA>& demandas_comp = {}) {
         nome = data_name;
         tipo = tg;
+        if (tg == tipo_grafo::dummy) {
+            return;
+        }
+
         // defines the file name, if it's an original graph
         string d_name;
         if (tg == tipo_grafo::original){
             d_name = data_name;
         }else{
-            d_name = "";
+            d_name = data_name;
         }
         vertices_completo = vertices_comp;
         completo = grafo_comp;
@@ -377,30 +385,38 @@ struct GRAFO{
 
 
         //define caminhos de leitura
-        string data_folder = caminho +  "dados/" + d_name;
-        string path_arcos = data_folder + "arcos.csv";
-        string path_vertices = data_folder + "vertices.csv";
-        string path_dem_forn = data_folder + "dem_forn.csv";
-        // verifica se todos os arquivos estão acessíveis
-        bool files_exists = filesystem::exists(path_arcos) and
-                            filesystem::exists(path_vertices) and
-                            filesystem::exists(path_dem_forn);
-        if(!files_exists) throw exception();
-
-        // cria grafo_completo a partir do arquivo de dados
-        if(vertices_completo.empty() and completo.empty() and demandas.empty()){
-            // ler dados da pasta de build
-            completo = ler_csv_grafo(path_arcos);
-            vertices_completo = ler_csv_vertices(path_vertices);
-            demandas = ler_csv_demandas(path_dem_forn);
+        if(tg == tipo_grafo::original){
+            string data_folder = caminho +  "dados/" + d_name;
+            string path_arcos = data_folder + "arcos.csv";
+            string path_vertices = data_folder + "vertices.csv";
+            string path_dem_forn = data_folder + "dem_forn.csv";
+            // verifica se todos os arquivos estão acessíveis
+            bool files_exists = filesystem::exists(path_arcos) and
+                                filesystem::exists(path_vertices) and
+                                filesystem::exists(path_dem_forn);
+            if(!files_exists) {
+                cerr << "Bases de dados não encontradas" << endl;
+                throw exception();
+            }
+            // cria grafo_completo a partir do arquivo de dados
+            if(vertices_completo.empty() and completo.empty() and demandas.empty()){
+                // ler dados da pasta de build caso não tenha sido passado nenhum parâmetro
+                completo = ler_csv_grafo(path_arcos);
+                vertices_completo = ler_csv_vertices(path_vertices);
+                demandas = ler_csv_demandas(path_dem_forn);
+            }
         }
 
-        //calcula bigM
+        //calcula bigM em função da demanda total do grafo_pai
         bigM = 0;
-        for(DEMANDA demanda : demandas){
-            bigM += demanda.d;
+        if(!demandas.empty()){
+            for(DEMANDA & demanda : demandas){
+                bigM += demanda.d;
+            }
+            bigM = bigM * 1.1;
+        }else{
+            bigM = pow(10,10);
         }
-        bigM = bigM * 1.1;
 
         // tranforma o vertices_completo em um dicionário para consulta por nós e salva uma lista com os vértices
         for (VERTICE &vertice : vertices_completo) {
@@ -433,8 +449,8 @@ struct GRAFO{
             }
         }
 
-        // grafo simples, sem considerar o sku
-        // e grafo simples loc (apenas de localidades)
+        // grafo_pai simples, sem considerar o sku
+        // e grafo_pai simples loc (apenas de localidades)
         int cont_arco_s = 0; // contagem de arcos simples é menor porque precisa nao considerar sku
         for (int arco = 0; arco < (int) completo.size(); arco++){
             if (arco == 0){
@@ -471,10 +487,10 @@ struct GRAFO{
             grafo_simples_idx[key] = i;
         }
 
-        // encontra quais os produtos "s" presentes no grafo
-        for (int arco = 0; arco < (int) completo.size() ; ++arco) {
-            string produto = completo[arco].s;
-            if (produto == "")continue;
+        // encontra quais os produtos "s" presentes no grafo_pai
+        for (auto & arco : completo) {
+            string produto = arco.s;
+            if (produto.empty())continue;
             if(!encontrar_elemento(produto,produtos)){
                 produtos.push_back(produto);
                 qnt_produtos++;
@@ -482,14 +498,14 @@ struct GRAFO{
         }
 
         // quantidade de localidades
-        for (ARCO_SIMPLES arco: grafo_simples){
+        for (ARCO_SIMPLES & arco: grafo_simples){
             if (arco.tipo_de_arco == "location") {
                 ++qnt_localidades;
             }
         }
 
 
-        // atribuindo valores ao struct do grafo
+        // atribuindo valores ao struct do grafo_pai
         completo_dic = grafo_completo_dic;
         completo_idx = grafo_completo_idx;
         simples = grafo_simples;
@@ -507,7 +523,7 @@ struct GRAFO{
         qnt_vertices = (int) vertices_completo.size();
         qnt_produtos = qnt_produtos;
         demandas_dic = demandas_dic;
-    }
+    }// end of struct GRAFO
 
     // retona todos os arcos de transportation que possuem origem na UF especificada,
     vector<ARCO> saidas_uf(string &uf){
@@ -524,27 +540,28 @@ struct GRAFO{
         return saidas;
     }
 
-    //adicionar um subgrafo ao grafo.
+    //adicionar um subgrafo ao grafo_pai.
     void add_subgrafo(tipo_grafo tg, vector<VERTICE> &sub_vertices){
         vector<ARCO> sub_arcos;
-        vector<DEMANDA> sub_demanda;
+        vector<DEMANDA> sub_demandas;
         for (ARCO a: GRAFO::completo) {
             for (VERTICE u: sub_vertices) {
                 for (VERTICE v: sub_vertices) {
-                    if (a.i == u.vertice and a.i == v.vertice) {
+                    if (a.i == u.vertice and a.j == v.vertice) {
                         sub_arcos.push_back(a);
                     }
                 }
             }
         }
         for (VERTICE u: sub_vertices) {
-            for (DEMANDA d: sub_demanda) {
+            for (DEMANDA d: GRAFO::demandas) {
                 if (u.vertice == d.vertice) {
-
+                    sub_demandas.push_back(d);
                 }
             }
         }
-        GRAFO subgrafo = GRAFO(tg,sub_vertices,sub_arcos,demandas);
+        GRAFO subgrafo = GRAFO("subgrafo",tg, sub_vertices, sub_arcos, sub_demandas);
+//        GRAFO sub = GRAFO("TESTe", tipo_grafo::componente);
         subgrafos.push_back(subgrafo);
     }
 
@@ -606,6 +623,7 @@ struct GRAFO{
         for (VERTICE u: vertices_completo){
             visit(u);
         }
+
         while(!finished_stack.empty()){
             assign(finished_stack.top(),finished_stack.top());
             finished_stack.pop();
@@ -723,7 +741,7 @@ struct GRAFO{
 
 
 
-    void find_cycles(){
+    void find_cycles(bool print_cycles){
         //todo: retirar ciclos iguais mas que iniciam em vertices diferentes.
         find_components();
         //seleciona apenas os subgrafos do tipo componente.
@@ -741,7 +759,7 @@ struct GRAFO{
                 print_subg(comp);
                 s = vertice;
                 //print vertice origem s.
-                if (DEBUG) cout << "Inicio: \t" << s.vertice << endl;
+//                if (DEBUG) cout << "Inicio: \t" << s.vertice << endl;
                 for(VERTICE i: comp.vertices_completo){
                     // limpa os vetores antes de iniciar outro circuito
                     blocked[i.vertice] = false;
@@ -752,8 +770,29 @@ struct GRAFO{
                 if(dummy){}
             }
         }
+        if(print_cycles){
+            cout << endl << "ENCONTRA CICLOS:" << endl;
+            cout << endl << "COMPONENTES" << endl;
+            for (GRAFO subg: this->subgrafos) {
+                if (subg.tipo == tipo_grafo::componente) {
+                    for (string v: subg.vertices) {
+                        cout << v << " \t ";
+                    }
+                    cout << "" << endl;
+                }
+            }
+            cout << endl << "CICLOS" << endl;
+            for (GRAFO g: this->subgrafos) {
+                if (g.tipo == tipo_grafo::ciclo) {
+                    for (string v: g.vertices) {
+                        cout << v << " \t ";
+                    }
+                    cout << endl ;
+                }
+            }
+        } // end print cycles
 
-    }
+    }// end function find_cycles()
 };
 
 
@@ -1041,6 +1080,50 @@ string refiner(IloEnv &env, IloModel model, IloCplex cplex,
 //    env.end();
 }
 
+GRAFO grafo_pai = GRAFO(tipo_grafo::dummy);
+
+
+//
+//struct CycleElimitation: IloCplex::LazyConstraintCallbackI {
+//    IloEnv &env;
+////    IloNumVarArray &y;
+//    vector<ARCO> arcos;
+//
+//    CycleElimitation(IloEnv &env, vector<ARCO> &arcos) :
+//            LazyConstraintCallbackI{env}, env{env}, arcos{arcos} {}
+//
+//    [[nodiscard]] IloCplex::CallbackI* duplicateCallback() const override {
+//        return new(env) CycleElimitation{*this};
+//    }
+//
+//    void main() override{
+//        vector<IloNum> y_values;
+//        for(ARCO arco : grafo_pai.completo){
+//            IloNum y_value = getValue(*arco.y_ptr);
+//            y_values.push_back(y_value);
+//            cout << endl << "VAR VALUE: " << y_value << endl;
+//            add(*arco.y_ptr <= 10); // restricao teste
+//        }
+//
+//    };
+//};
+//
+
+ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,vector<ARCO>&, arcos){
+//    IloEnv &env;
+//    IloNumVarArray &y;
+//    vector<ARCO> arcos;
+
+    vector<IloNum> y_values;
+    for(ARCO& arco : arcos){
+        IloNum y_value = getValue(*arco.y_ptr);
+        y_values.push_back(y_value);
+        cout << endl << "VAR VALUE: " << y_value << endl;
+        add(*arco.y_ptr <= 10); // restricao teste
+    }
+
+};
+
 int flow(bool baseline = false,
          bool find_cycles = false,
          float time_limit_sec = 20*60,
@@ -1057,49 +1140,34 @@ int flow(bool baseline = false,
     IloEnv env;
     print_running_time("Starting data reading");
 //    cout << "Starting data reading" << endl;
-    GRAFO grafo = GRAFO(data_name);
+    grafo_pai = GRAFO(data_name);
     // Print of graphs totals
     cout << "Data name: " << data_name << endl;
-    cout << "Nodes: \t\t" << to_string(grafo.qnt_vertices) << endl;
-    cout << "Arcs: \t\t" << to_string(grafo.qnt_arcos) << endl;
-    cout << "Location arcs: \t" << to_string(grafo.qnt_arcos_localidade) << endl;
-    cout << "Transp arcs: \t" << to_string(grafo.qnt_arcos_transporte) << endl;
-    cout << "Locations: \t" << to_string(grafo.qnt_localidades) << endl;
-    cout << "Products: \t" << to_string(grafo.qnt_produtos) << endl;
+    cout << "Nodes: \t\t" << to_string(grafo_pai.qnt_vertices) << endl;
+    cout << "Arcs: \t\t" << to_string(grafo_pai.qnt_arcos) << endl;
+    cout << "Location arcs: \t" << to_string(grafo_pai.qnt_arcos_localidade) << endl;
+    cout << "Transp arcs: \t" << to_string(grafo_pai.qnt_arcos_transporte) << endl;
+    cout << "Locations: \t" << to_string(grafo_pai.qnt_localidades) << endl;
+    cout << "Products: \t" << to_string(grafo_pai.qnt_produtos) << endl;
 
     print_running_time("Data reading end");
     cout << endl << "Model construction start" << endl;
 
-    if(find_cycles) {
-        grafo.find_cycles();
-        cout << "COMPONENTES" << endl;
-        for (GRAFO g: grafo.subgrafos) {
-            if (g.tipo == tipo_grafo::componente) {
-                for (string v: g.vertices) {
-                    cout << v << " \t ";
-                }
-                cout << "" << endl;
-            }
-        }
-        cout << endl << "CICLOS" << endl;
-        for (GRAFO g: grafo.subgrafos) {
-            if (g.tipo == tipo_grafo::ciclo) {
-                cout << "" << endl;
-                for (string v: g.vertices) {
-                    cout << v << " \t ";
-                }
-            }
-        }
-    }
-    cout << endl ;
 
     try {
-        definir_constantes(env, grafo);
+        //definir constantes e variáveis.
+        definir_constantes(env, grafo_pai);
         map<string,string> dic_var;
         map<string,string> dic_var_modelo;
-        auto dics_var = definir_variaveis(env, &grafo);
+        auto dics_var = definir_variaveis(env, &grafo_pai);
         dic_var = dics_var.dic_var;
         dic_var_modelo = dics_var.dic_var_modelo;
+
+        if(find_cycles) {
+            // todo: montar grafo_pai a partir das rotas com volume alocado.
+            grafo_pai.find_cycles(true);
+        }
+        cout << endl ;
 
         IloModel model(env);
         // constantes para as variáveis auxiliares z
@@ -1108,12 +1176,14 @@ int flow(bool baseline = false,
             ones.add(1);
         }
 
-        debug("TOTAL DE CONSTANTES E VARIÁVEIS");
+        debug("TOTAL DE CONSTANTES");
         debug("a: ", to_string(a.getSize()));
-        debug("c: ", to_string(c.getSize()));
-        debug("x: ", to_string(x.getSize()));
         debug("b: ", to_string(b.getSize()));
-        debug("y_ptr: ", to_string(y.getSize()));
+        debug("c: ", to_string(c.getSize()));
+        debug("TOTAL DE VARIÁVEIS");
+        debug("x: ", to_string(x.getSize()));
+        debug("w: ", to_string(w.getSize()));
+        debug("y: ", to_string(y.getSize()));
         debug("z: ", to_string(z.getSize()));
 
         // Objective Function: Minimize Cost
@@ -1125,25 +1195,25 @@ int flow(bool baseline = false,
 
 
         // restrição de balanço de massa
-        for (VERTICE vertice: grafo.vertices_completo) {
+        for (VERTICE vertice: grafo_pai.vertices_completo) {
             string j = vertice.vertice;
             DEBUG = false;
             debug("");
             debug("VERTICE: ", j);
             debug(" tipo: ", vertice.tipo); //debug do tipo de vértice
-            for (string s: grafo.produtos) {
+            for (string s: grafo_pai.produtos) {
                 debug(" PRODUTO: ", s);
                 auto y_entradas = IloNumVarArray(env);
                 auto y_saidas = IloNumVarArray(env);
                 debug("  ENTRADAS");
-                for (string i: grafo.orgs_de(j)) {
+                for (string i: grafo_pai.orgs_de(j)) {
                     debug("   ",i,s);
-                    y_entradas.add(y[grafo.completo_idx[{i, j, s}]]);
+                    y_entradas.add(y[grafo_pai.completo_idx[{i, j, s}]]);
                 }
                 debug("  SAIDAS");
-                for (string i: grafo.dest_de(j)) {
+                for (string i: grafo_pai.dest_de(j)) {
                     debug("   ",i,s);
-                    y_saidas.add(y[grafo.completo_idx[{j, i, s}]]);
+                    y_saidas.add(y[grafo_pai.completo_idx[{j, i, s}]]);
                 }
 
 //                debug("entradas -> " ,j ,s ,": ", y_entradas); //debug dos vertices de entrada
@@ -1152,9 +1222,9 @@ int flow(bool baseline = false,
                 if (vertice.tipo == "passagem") {
                     model.add(IloSum(y_entradas) - IloSum(y_saidas) == 0);
                 }else if (vertice.tipo == "origem"){
-                    model.add(IloSum(y_entradas) - IloSum(y_saidas) == -grafo.demandas_dic[{j,s}].o);
+                    model.add(IloSum(y_entradas) - IloSum(y_saidas) == -grafo_pai.demandas_dic[{j, s}].o);
                 }else if (vertice.tipo == "demanda"){
-                    model.add(IloSum(y_entradas) - IloSum(y_saidas) == grafo.demandas_dic[{j,s}].d);
+                    model.add(IloSum(y_entradas) - IloSum(y_saidas) == grafo_pai.demandas_dic[{j, s}].d);
                 }else{
                    throw invalid_argument("vertice não possui um dos 3 tipos permitidos (passagem, origem, demanda)");
                 }
@@ -1164,24 +1234,23 @@ int flow(bool baseline = false,
 
         // restrição de capacidade e alocação de custo fixo
         int x_index = 0;
-        for(const ARCO_SIMPLES& arco : grafo.simples){
+        for(const ARCO_SIMPLES& arco : grafo_pai.simples){
             if(arco.tipo_de_arco == "location"){
                 string i = arco.i;
                 string j = arco.j;
                 float cap;
                 auto y_sum = IloNumVarArray(env);
-                for (const string& s : grafo.produtos){
-                    auto index = grafo.completo_idx[{i,j,s}];
+                for (const string& s : grafo_pai.produtos){
+                    auto index = grafo_pai.completo_idx[{i, j, s}];
 //                    cout << "DEBUG y_ptr index: " << index << endl;
                     y_sum.add(y[index]);
-//                    y_sum.add(grafo.completo[index].y);
+//                    y_sum.add(grafo_pai.completo[index].y);
                 }
                 if(isnan(arco.c)){
-                    cap = grafo.bigM;
+                    cap = grafo_pai.bigM;
                 }else{
                     cap = arco.c;
                 }
-                cout << "debug x: " << arco.index << endl;
                 model.add(IloSum(y_sum) <= cap * *arco.x_ptr);
                 x_index++;
             }
@@ -1194,8 +1263,8 @@ int flow(bool baseline = false,
         // restrição para o custo do saldo de icms
         for(int u = 0; u < 27 ; u++){
             string uf = UFs[u];
-            vector<ARCO> entradas_uf = grafo.entradas_uf(uf);
-            vector<ARCO> saidas_uf = grafo.saidas_uf(uf);
+            vector<ARCO> entradas_uf = grafo_pai.entradas_uf(uf);
+            vector<ARCO> saidas_uf = grafo_pai.saidas_uf(uf);
             IloExpr deb(env);
             IloExpr cred(env);
             for (ARCO arco : saidas_uf){
@@ -1211,17 +1280,20 @@ int flow(bool baseline = false,
             model.add(z[u] >= deb - cred);
         }
 
+
+
         //restrição de baseline INCOMPLETA
         if(baseline){
             float buffer = 1;
-            for(ARCO arco: grafo.completo){
+            for(ARCO arco: grafo_pai.completo){
                 int index = arco.index;
                 model.add(y[index] + buffer >= arco.v);
                 model.add(y[index] - buffer <= arco.v);
             }
         }
 
-        //RESTRIÇAO DE CICLOS
+        //RESTRIÇAO DE CICLOS lazy constraint
+
         /*
          * sum[w_ijs in C'](w_ijs) < |c| forall(C' in C)
          * y_ijs <= M * w_ijs  // liga o binário caso o fluxo y_ijs seja utilizado
@@ -1232,7 +1304,9 @@ int flow(bool baseline = false,
          * w_ijs = {0,1 | ij isin ARCOS, s isin Prod }
          * w_ijs = binário que indica o se um determinado arco está sendo usado
         */
-//        for(GRAFO subgrafo: grafo.subgrafos){
+
+
+//        for(GRAFO subgrafo: grafo_pai.subgrafos){
 //            break;
 //            if (subgrafo.tipo != tipo_grafo::ciclo) break;
 //            GRAFO& ciclo = subgrafo;
@@ -1250,14 +1324,32 @@ int flow(bool baseline = false,
 
 
 //        string uf = UFs[0];
-//        cout << grafo.entradas_uf(uf)[0].index << endl;
-//        cout << grafo.saidas_uf(uf)[0].index << endl;
+//        cout << grafo_pai.entradas_uf(uf)[0].index << endl;
+//        cout << grafo_pai.saidas_uf(uf)[0].index << endl;
 
         print_running_time("Model construction end");
 
         // Optimize
         cout << endl << "Optimization start" << endl;
         IloCplex cplex(model);
+//        cplex.addLazyConstraint(CycleElimitation);
+
+        // chama a lazy constraint para o modelo
+        cplex.use(CycleElimitation(env,grafo_pai.completo));
+
+        // parametros de exempo de cplex iloadmipex8
+//        cplex.setParam(IloCplex::Param::Preprocessing::Presolve, 0);
+//        cplex.setParam(IloCplex::Param::MIP::Strategy::HeuristicFreq, -1);
+//        cplex.setParam(IloCplex::Param::MIP::Cuts::MIRCut, -1);
+//        cplex.setParam(IloCplex::Param::MIP::Cuts::Implied, -1);
+//        cplex.setParam(IloCplex::Param::MIP::Cuts::Gomory, -1);
+//        cplex.setParam(IloCplex::Param::MIP::Cuts::FlowCovers, -1);
+//        cplex.setParam(IloCplex::Param::MIP::Cuts::PathCut, -1);
+//        cplex.setParam(IloCplex::Param::MIP::Cuts::LiftProj, -1);
+//        cplex.setParam(IloCplex::Param::MIP::Cuts::ZeroHalfCut, -1);
+//        cplex.setParam(IloCplex::Param::MIP::Cuts::Cliques, -1);
+//        cplex.setParam(IloCplex::Param::MIP::Cuts::Covers, -1);
+        // parametros originais
         cplex.setParam(IloCplex::Param::TimeLimit, time_limit_sec);
         cplex.setParam(IloCplex::Param::Threads, 8);
 //        cplex.setOut(env.getNullStream());
@@ -1364,16 +1456,16 @@ int flow(bool baseline = false,
         ofstream csv_localidades (caminho + nome_arquivo_localidades);
 
         int indice_localidade = 0;
-        for(ARCO_SIMPLES arco : grafo.simples){
+        for(ARCO_SIMPLES arco : grafo_pai.simples){
             if(arco.tipo_de_arco == "location"){
                 //convert to portuguese number delimiter.
                 string vol_loc = to_string(abs(cplex.getValue(x[indice_localidade])));
                 if(vol_loc.find(".") < 1e20) vol_loc.replace(vol_loc.find("."),1,",");
                 vol_loc = vol_loc[0];
                 //print terminal
-                env.out() << arco.i + " -> " + arco.j + " (cap: " << + arco.c <<  ")"
-                << " (" << grafo.vertices_completo_dic[arco.i].uf << "):  "
-                << vol_loc;
+                env.out() << arco.i + " -> " + arco.j + " (cap: " << + arco.c << ")"
+                          << " (" << grafo_pai.vertices_completo_dic[arco.i].uf << "):  "
+                          << vol_loc;
                 if(vol_loc == string("1")) cout << "\t <<<";
                 cout << endl;
 
@@ -1382,8 +1474,8 @@ int flow(bool baseline = false,
                     csv_localidades << "org;dest;capacidade max;uf;uso" << endl;
                 }
                 csv_localidades << arco.i + ";" + arco.j + ";" << + arco.c \
-                << ";" << grafo.vertices_completo_dic[arco.i].uf \
-                << ";" << cplex.getValue(x[indice_localidade]) \
+ << ";" << grafo_pai.vertices_completo_dic[arco.i].uf \
+ << ";" << cplex.getValue(x[indice_localidade]) \
                 << endl;
 
                 ++indice_localidade;
@@ -1425,13 +1517,13 @@ int flow(bool baseline = false,
         }
         ofstream csv_fluxos (caminho + nome_arquivo_fluxos);
 
-        for(int i = 0; i < grafo.qnt_arcos; i++){
+        for(int i = 0; i < grafo_pai.qnt_arcos; i++){
             string flow_vol = to_string(cplex.getValue(y[i]));
             if(flow_vol.find(".") < 1e20) flow_vol.replace(flow_vol.find("."),1,",");
             if(i==0) csv_fluxos << "org;dest;sku;volume" << endl;
-           csv_fluxos << grafo.completo[i].i << ";";
-            csv_fluxos << grafo.completo[i].j << ";";
-            csv_fluxos << grafo.completo[i].s << ";";
+           csv_fluxos << grafo_pai.completo[i].i << ";";
+            csv_fluxos << grafo_pai.completo[i].j << ";";
+            csv_fluxos << grafo_pai.completo[i].s << ";";
            csv_fluxos << flow_vol << endl;
         }
         csv_fluxos.close();
@@ -1468,7 +1560,7 @@ int main(int argc, char* argv[]) {
     }
 
     while(true){
-        flow(false, false, time_limit_sec,data_name);
+        flow(false,true, time_limit_sec,data_name);
         cout << "Press \"s\" to run again" << endl;
         cin >> loop_input;
         if(loop_input != "s"){

@@ -1,9 +1,7 @@
 vertice;UF;tipo
-A-in;MG;origem
-A-out;MG;passagem
+A-out;MG;origem
 Ain;RJ;passagem
 Aout;RJ;passagem
-Bint;SP;passagem
+Bin;SP;passagem
 Bout;SP;passagem
-B+in;RS;passagem
-B+out;RS;demanda
+B+in;RS;demanda
