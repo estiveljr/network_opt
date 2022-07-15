@@ -66,6 +66,10 @@ struct ARCO {
     float v = 0 ; // volume do fluxo (usado no baseline)
     IloBoolVar* w_ptr = nullptr; // initialize pointer for w_ptr model var
     IloNumVar* y_ptr = nullptr; // initialize pointer for y_ptr model var
+    //nome do arco
+    string name(){
+       return "(" + tipo_de_arco.substr(0,5)+ ": "  + this->i + "->" + j + "," + s + ")";
+    }
 };
 
 struct ARCO_SIMPLES{
@@ -266,6 +270,12 @@ vector<DEMANDA> ler_csv_demandas(const std::string &nome_arquivo, std::string de
 }
 
 struct GRAFO{
+    private:
+    void find_components(map<int,IloNum> arcs);
+
+    public:
+    void find_cycles(map<int,IloNum> arcs, bool print_cycles, bool alocated_arcs);
+
     string nome;
     tipo_grafo tipo;
     vector<ARCO> completo; // arco ijs
@@ -290,7 +300,6 @@ struct GRAFO{
     int qnt_vertices = 0;
     int qnt_produtos = 0;
     int qnt_localidades = 0;
-
 
     // retona todas as origens i de um destino j, sem considerar o sku
     vector<string> orgs_de(string &vertice){
@@ -351,179 +360,12 @@ struct GRAFO{
     explicit GRAFO( tipo_grafo tg = tipo_grafo::original,
                     const vector<VERTICE>& vertices_comp = {},
                     const vector<ARCO>& grafo_comp= {},
-                    const vector<DEMANDA>& demandas_comp = {}) {
-        string data_name;
-        GRAFO(data_name, tg, vertices_comp, grafo_comp, demandas_comp);
-    }
+                    const vector<DEMANDA>& demandas_comp = {});
     explicit GRAFO( const string& data_name,
                     tipo_grafo tg = tipo_grafo::original,
                     const vector<VERTICE>& vertices_comp = {},
                     const vector<ARCO>& grafo_comp= {},
-                    const vector<DEMANDA>& demandas_comp = {}) {
-        nome = data_name;
-        tipo = tg;
-        if (tg == tipo_grafo::dummy) {
-            return;
-        }
-
-        // defines the file name, if it's an original graph
-        string d_name;
-        if (tg == tipo_grafo::original){
-            d_name = data_name;
-        }else{
-            d_name = data_name;
-        }
-        vertices_completo = vertices_comp;
-        completo = grafo_comp;
-        demandas = demandas_comp;
-        std::map<vector<string>, ARCO> grafo_completo_dic;
-        std::map<vector<string>, unsigned int> grafo_completo_idx;
-        vector<ARCO_SIMPLES> grafo_simples; // i: products not consider
-        vector<ARCO_SIMPLES> grafo_simples_loc; // ij apenas para location
-        std::map<vector<string>, ARCO_SIMPLES> grafo_simples_dic;
-        std::map<vector<string>, unsigned int> grafo_simples_idx;
-
-
-        //define caminhos de leitura
-        if(tg == tipo_grafo::original){
-            string data_folder = caminho +  "dados/" + d_name;
-            string path_arcos = data_folder + "arcos.csv";
-            string path_vertices = data_folder + "vertices.csv";
-            string path_dem_forn = data_folder + "dem_forn.csv";
-            // verifica se todos os arquivos estão acessíveis
-            bool files_exists = filesystem::exists(path_arcos) and
-                                filesystem::exists(path_vertices) and
-                                filesystem::exists(path_dem_forn);
-            if(!files_exists) {
-                cerr << "Bases de dados não encontradas" << endl;
-                throw exception();
-            }
-            // cria grafo_completo a partir do arquivo de dados
-            if(vertices_completo.empty() and completo.empty() and demandas.empty()){
-                // ler dados da pasta de build caso não tenha sido passado nenhum parâmetro
-                completo = ler_csv_grafo(path_arcos);
-                vertices_completo = ler_csv_vertices(path_vertices);
-                demandas = ler_csv_demandas(path_dem_forn);
-            }
-        }
-
-        //calcula bigM em função da demanda total do grafo_pai
-        bigM = 0;
-        if(!demandas.empty()){
-            for(DEMANDA & demanda : demandas){
-                bigM += demanda.d;
-            }
-            bigM = bigM * 1.1;
-        }else{
-            bigM = pow(10,10);
-        }
-
-        // tranforma o vertices_completo em um dicionário para consulta por nós e salva uma lista com os vértices
-        for (VERTICE &vertice : vertices_completo) {
-            string key = vertice.vertice;
-            vertices_completo_dic[key] = vertice;
-            vertices.push_back(vertice.vertice);
-
-        }
-
-        // tranforma "demandas" em um dicionário para consulta por "nó, sku" e salva uma lista com os vértices
-        for (const auto& demanda : demandas) {
-            vector<string> key = {demanda.vertice, demanda.s};
-            demandas_dic[key] = demanda;
-//        vertices.push_back(demanda.demanda);
-
-        }
-        // tranforma o grafo_completo em um dicionário para consulta por par de nós e sku
-        for (unsigned int i = 0; i < completo.size(); ++i) {
-            vector<string> key = {completo[i].i, completo[i].j, completo[i].s};
-            grafo_completo_dic[key] = completo[i];
-            grafo_completo_idx[key] = i;
-        }
-
-        // quantidades de cada tipo de arco
-        for (auto & arco : completo){
-            if (arco.tipo_de_arco == "location"){
-                ++qnt_arcos_localidade;
-            }else if (arco.tipo_de_arco == "transportation"){
-                ++qnt_arcos_transporte;
-            }
-        }
-
-        // grafo_pai simples, sem considerar o sku
-        // e grafo_pai simples loc (apenas de localidades)
-        int cont_arco_s = 0; // contagem de arcos simples é menor porque precisa nao considerar sku
-        for (int arco = 0; arco < (int) completo.size(); arco++){
-            if (arco == 0){
-                ARCO_SIMPLES arco_simples;
-                arco_simples.index = cont_arco_s;
-                arco_simples.tipo_de_arco = completo[arco].tipo_de_arco;
-                arco_simples.i = completo[arco].i ;
-                arco_simples.j = completo[arco].j ;
-                arco_simples.a = completo[arco].a ;
-                arco_simples.c = completo[arco].c ;
-                grafo_simples.push_back(arco_simples);
-                if (arco_simples.tipo_de_arco == "location")
-                    grafo_simples_loc.push_back(arco_simples);
-                ++cont_arco_s;
-            }else if (!(completo[arco].i == completo[arco - 1].i and completo[arco].j == completo[arco - 1].j)) {
-                ARCO_SIMPLES arco_simples;
-                arco_simples.index = cont_arco_s;
-                arco_simples.tipo_de_arco = completo[arco].tipo_de_arco;
-                arco_simples.i = completo[arco].i ;
-                arco_simples.j = completo[arco].j ;
-                arco_simples.a = completo[arco].a ;
-                arco_simples.c = completo[arco].c ;
-                grafo_simples.push_back(arco_simples);
-                if (arco_simples.tipo_de_arco == "location")
-                    grafo_simples_loc.push_back(arco_simples);
-                ++cont_arco_s;
-            }
-        }
-
-        // tranforma o grafo_simples em um dicionário para consulta por par de nós
-        for (unsigned int i = 0; i < grafo_simples.size(); ++i) {
-            vector<string> key = {grafo_simples[i].i, grafo_simples[i].j};
-            grafo_simples_dic[key] = grafo_simples[i];
-            grafo_simples_idx[key] = i;
-        }
-
-        // encontra quais os produtos "s" presentes no grafo_pai
-        for (auto & arco : completo) {
-            string produto = arco.s;
-            if (produto.empty())continue;
-            if(!encontrar_elemento(produto,produtos)){
-                produtos.push_back(produto);
-                qnt_produtos++;
-            }
-        }
-
-        // quantidade de localidades
-        for (ARCO_SIMPLES & arco: grafo_simples){
-            if (arco.tipo_de_arco == "location") {
-                ++qnt_localidades;
-            }
-        }
-
-
-        // atribuindo valores ao struct do grafo_pai
-        completo_dic = grafo_completo_dic;
-        completo_idx = grafo_completo_idx;
-        simples = grafo_simples;
-        simples_loc = grafo_simples_loc;
-        simples_dic = grafo_simples_dic;
-        simples_idx = grafo_simples_idx;
-        vertices_completo_dic = vertices_completo_dic;
-        vertices = vertices;
-        produtos = produtos;
-        qnt_arcos_transporte = qnt_arcos_transporte;
-        qnt_arcos_localidade = qnt_arcos_localidade;
-        qnt_arcos = (int) completo.size();
-        qnt_localidades = qnt_localidades;
-        qnt_arcos_simples = (int) simples.size();
-        qnt_vertices = (int) vertices_completo.size();
-        qnt_produtos = qnt_produtos;
-        demandas_dic = demandas_dic;
-    }// end of struct GRAFO
+                    const vector<DEMANDA>& demandas_comp = {});// end of struct GRAFO
 
     // retona todos os arcos de transportation que possuem origem na UF especificada,
     vector<ARCO> saidas_uf(string &uf){
@@ -603,55 +445,6 @@ struct GRAFO{
             components.insert(make_pair(key,value));
             for(string u: orgs_de(v.vertice)) {
                 assign(vertices_completo_dic[u], root);
-            }
-        }
-    }
-
-    void find_components() {
-//    For each vertex u of the graph, mark u as unvisited. Let L be empty.
-//            For each vertex u of the graph do Visit(u), where Visit(u) is the recursive subroutine:
-//    If u is unvisited then:
-//    Mark u as visited.
-//            For each out-neighbour v of u, do Visit(v).
-//                Prepend u to L.
-//            Otherwise do nothing.
-//    For each element u of L in order, do Assign(u,u) where Assign(u,root) is the recursive subroutine:
-//      If u has not been assigned to a component then:
-//          Assign u as belonging to the component whose root is root.
-//            For each in-neighbour v of u, do Assign(v,root).
-//                Otherwise do nothing.
-        for (VERTICE u: vertices_completo){
-            visit(u);
-        }
-
-        while(!finished_stack.empty()){
-            assign(finished_stack.top(),finished_stack.top());
-            finished_stack.pop();
-        }
-
-        //cria uma lista de subgrafos a partir dos componentes
-        for(pair<const VERTICE, vector<VERTICE>> c: components) {
-            if (c.second.size() > 1) {
-                vector<VERTICE> sub_vertices = c.second;
-                vector<ARCO> sub_arcos;
-                vector<DEMANDA> sub_demanda;
-                for (ARCO a: GRAFO::completo) {
-                    for (VERTICE u: sub_vertices) {
-                        for (VERTICE v: sub_vertices) {
-                            if (a.i == u.vertice and a.i == v.vertice) {
-                                sub_arcos.push_back(a);
-                            }
-                        }
-                    }
-                }
-                for (VERTICE u: sub_vertices) {
-                    for (DEMANDA d: sub_demanda) {
-                        if (u.vertice == d.vertice) {
-
-                        }
-                    }
-                }
-                add_subgrafo(tipo_grafo::componente, sub_vertices);
             }
         }
     }
@@ -739,61 +532,306 @@ struct GRAFO{
         return f;
     }
 
-
-
-    void find_cycles(bool print_cycles){
-        //todo: retirar ciclos iguais mas que iniciam em vertices diferentes.
-        find_components();
-        //seleciona apenas os subgrafos do tipo componente.
-        vector<GRAFO> componentes;
-        for(GRAFO subg: subgrafos) {
-            if (subg.tipo == tipo_grafo::componente) componentes.push_back(subg);
-        }
-
-        //main loop (while do no artigo)
-        for(GRAFO comp: componentes){
-            if(comp.tipo != tipo_grafo::componente) return;
-            cycle_candidate = {}; //limpar stack.
-            s = {};
-            for(const VERTICE& vertice: comp.vertices_completo) {
-                print_subg(comp);
-                s = vertice;
-                //print vertice origem s.
-//                if (DEBUG) cout << "Inicio: \t" << s.vertice << endl;
-                for(VERTICE i: comp.vertices_completo){
-                    // limpa os vetores antes de iniciar outro circuito
-                    blocked[i.vertice] = false;
-                    blocked_map[i.vertice] = {};
-                }
-                print_vectors();
-                bool dummy = cycle(s);
-                if(dummy){}
-            }
-        }
-        if(print_cycles){
-            cout << endl << "ENCONTRA CICLOS:" << endl;
-            cout << endl << "COMPONENTES" << endl;
-            for (GRAFO subg: this->subgrafos) {
-                if (subg.tipo == tipo_grafo::componente) {
-                    for (string v: subg.vertices) {
-                        cout << v << " \t ";
-                    }
-                    cout << "" << endl;
-                }
-            }
-            cout << endl << "CICLOS" << endl;
-            for (GRAFO g: this->subgrafos) {
-                if (g.tipo == tipo_grafo::ciclo) {
-                    for (string v: g.vertices) {
-                        cout << v << " \t ";
-                    }
-                    cout << endl ;
-                }
-            }
-        } // end print cycles
-
-    }// end function find_cycles()
 };
+
+void GRAFO::find_cycles(map<int,IloNum> arcs, bool print_cycles, bool alocated_arcs) {
+    //todo: retirar ciclos iguais mas que iniciam em vertices diferentes.
+    //seleciona apenas os subgrafos do tipo componente.
+
+    this->find_components(arcs);
+    vector<GRAFO> componentes;
+    for(GRAFO& subg: this->subgrafos) {
+        if (subg.tipo == tipo_grafo::componente) componentes.push_back(subg);
+    }
+
+    //main loop (while...do no artigo)
+    for(GRAFO comp: componentes){
+        if(comp.tipo != tipo_grafo::componente) return;
+        cycle_candidate = {}; //limpar stack.
+        s = {};
+        for(const VERTICE& vertice: comp.vertices_completo) {
+            print_subg(comp);
+            s = vertice;
+            //print vertice origem s.
+//                if (DEBUG) cout << "Inicio: \t" << s.vertice << endl;
+            for(VERTICE i: comp.vertices_completo){
+                // limpa os vetores antes de iniciar outro circuito
+                blocked[i.vertice] = false;
+                blocked_map[i.vertice] = {};
+            }
+            print_vectors();
+            bool dummy = cycle(s);
+            if(dummy){}
+        }
+    }
+    if(print_cycles){
+        cout << endl << "ENCONTRA CICLOS:" << endl;
+        cout << endl << "COMPONENTES" << endl;
+        for (GRAFO subg: this->subgrafos) {
+            if (subg.tipo == tipo_grafo::componente) {
+                for (string v: subg.vertices) {
+                    cout << v << " \t ";
+                }
+                cout << "" << endl;
+            }
+        }
+        cout << endl << "CICLOS" << endl;
+        for (GRAFO g: this->subgrafos) {
+            if (g.tipo == tipo_grafo::ciclo) {
+                for (string v: g.vertices) {
+                    cout << v << " \t ";
+                }
+                cout << endl ;
+            }
+        }
+    } // end print cycles
+
+}
+
+void GRAFO::find_components(map<int,IloNum> arcs) {
+//    For each vertex u of the graph, mark u as unvisited. Let L be empty.
+//            For each vertex u of the graph do Visit(u), where Visit(u) is the recursive subroutine:
+//    If u is unvisited then:
+//    Mark u as visited.
+//            For each out-neighbour v of u, do Visit(v).
+//                Prepend u to L.
+//            Otherwise do nothing.
+//    For each element u of L in order, do Assign(u,u) where Assign(u,root) is the recursive subroutine:
+//      If u has not been assigned to a component then:
+//          Assign u as belonging to the component whose root is root.
+//            For each in-neighbour v of u, do Assign(v,root).
+//                Otherwise do nothing.
+
+    //Filtra arcos e vértices com volume com volume
+    vector<ARCO> arcos_com_volume;
+    std::set<VERTICE> vertices_com_volume;
+    for (ARCO& a: completo){
+        if(arcs[a.index] > 0){ //define o limitar do volume para considerar um ciclo
+            arcos_com_volume.push_back(a);
+            for (VERTICE& u: vertices_completo){
+                if(u.vertice == a.i or u.vertice == a.j) {
+                    vertices_com_volume.insert(u);
+                }
+            }
+            //debug
+//            cout << "arco: \t" << a.name() << "\tvol solver: \t" << arcs[a.index] << endl;
+        }
+    }
+
+    // iniciar algo para encontrar componentes
+    for (VERTICE u: vertices_com_volume){
+        visit(u);
+    }
+
+    while(!finished_stack.empty()){
+        assign(finished_stack.top(),finished_stack.top());
+        finished_stack.pop();
+    }
+
+    //cria uma lista de subgrafos a partir dos componentes
+    for(pair<const VERTICE, vector<VERTICE>> c: components) {
+        if (c.second.size() > 1) {
+            vector<VERTICE> sub_vertices = c.second;
+            vector<ARCO> sub_arcos;
+            vector<DEMANDA> sub_demanda;
+            for (ARCO a: GRAFO::completo) {
+                for (VERTICE u: sub_vertices) {
+                    for (VERTICE v: sub_vertices) {
+                        if (a.i == u.vertice and a.i == v.vertice) {
+                            sub_arcos.push_back(a);
+                        }
+                    }
+                }
+            }
+            for (VERTICE u: sub_vertices) {
+                for (DEMANDA d: sub_demanda) {
+                    if (u.vertice == d.vertice) {
+
+                    }
+                }
+            }
+            add_subgrafo(tipo_grafo::componente, sub_vertices);
+        }
+    }
+}
+
+GRAFO::GRAFO(tipo_grafo tg,
+             const vector<VERTICE> &vertices_comp,
+             const vector<ARCO> &grafo_comp,
+             const vector<DEMANDA> &demandas_comp) {
+    string data_name;
+    GRAFO(data_name, tg, vertices_comp, grafo_comp, demandas_comp);
+}
+
+GRAFO::GRAFO(const string &data_name,
+             tipo_grafo tg,
+             const vector<VERTICE> &vertices_comp,
+             const vector<ARCO> &grafo_comp,
+             const vector<DEMANDA> &demandas_comp) {
+    nome = data_name;
+    tipo = tg;
+    if (tg == tipo_grafo::dummy) {
+        return;
+    }
+
+    // defines the file name, if it's an original graph
+    string d_name;
+    if (tg == tipo_grafo::original){
+        d_name = data_name;
+    }else{
+        d_name = data_name;
+    }
+    vertices_completo = vertices_comp;
+    completo = grafo_comp;
+    demandas = demandas_comp;
+    std::map<vector<string>, ARCO> grafo_completo_dic;
+    std::map<vector<string>, unsigned int> grafo_completo_idx;
+    vector<ARCO_SIMPLES> grafo_simples; // i: products not consider
+    vector<ARCO_SIMPLES> grafo_simples_loc; // ij apenas para location
+    std::map<vector<string>, ARCO_SIMPLES> grafo_simples_dic;
+    std::map<vector<string>, unsigned int> grafo_simples_idx;
+
+
+    //define caminhos de leitura
+    if(tg == tipo_grafo::original){
+        string data_folder = caminho +  "dados/" + d_name;
+        string path_arcos = data_folder + "arcos.csv";
+        string path_vertices = data_folder + "vertices.csv";
+        string path_dem_forn = data_folder + "dem_forn.csv";
+        // verifica se todos os arquivos estão acessíveis
+        bool files_exists = filesystem::exists(path_arcos) and
+                            filesystem::exists(path_vertices) and
+                            filesystem::exists(path_dem_forn);
+        if(!files_exists) {
+            cerr << "Bases de dados não encontradas" << endl;
+            throw exception();
+        }
+        // cria grafo_completo a partir do arquivo de dados
+        if(vertices_completo.empty() and completo.empty() and demandas.empty()){
+            // ler dados da pasta de build caso não tenha sido passado nenhum parâmetro
+            completo = ler_csv_grafo(path_arcos);
+            vertices_completo = ler_csv_vertices(path_vertices);
+            demandas = ler_csv_demandas(path_dem_forn);
+        }
+    }
+
+    //calcula bigM em função da demanda total do grafo_pai
+    bigM = 0;
+    if(!demandas.empty()){
+        for(DEMANDA & demanda : demandas){
+            bigM += demanda.d;
+        }
+        bigM = bigM * 1.1;
+    }else{
+        bigM = pow(10,10);
+    }
+
+    // tranforma o vertices_completo em um dicionário para consulta por nós e salva uma lista com os vértices
+    for (VERTICE &vertice : vertices_completo) {
+        string key = vertice.vertice;
+        vertices_completo_dic[key] = vertice;
+        vertices.push_back(vertice.vertice);
+
+    }
+
+    // tranforma "demandas" em um dicionário para consulta por "nó, sku" e salva uma lista com os vértices
+    for (const auto& demanda : demandas) {
+        vector<string> key = {demanda.vertice, demanda.s};
+        demandas_dic[key] = demanda;
+//        vertices.push_back(demanda.demanda);
+
+    }
+    // tranforma o grafo_completo em um dicionário para consulta por par de nós e sku
+    for (unsigned int i = 0; i < completo.size(); ++i) {
+        vector<string> key = {completo[i].i, completo[i].j, completo[i].s};
+        grafo_completo_dic[key] = completo[i];
+        grafo_completo_idx[key] = i;
+    }
+
+    // quantidades de cada tipo de arco
+    for (auto & arco : completo){
+        if (arco.tipo_de_arco == "location"){
+            ++qnt_arcos_localidade;
+        }else if (arco.tipo_de_arco == "transportation"){
+            ++qnt_arcos_transporte;
+        }
+    }
+
+    // grafo_pai simples, sem considerar o sku
+    // e grafo_pai simples loc (apenas de localidades)
+    int cont_arco_s = 0; // contagem de arcos simples é menor porque precisa nao considerar sku
+    for (int arco = 0; arco < (int) completo.size(); arco++){
+        if (arco == 0){
+            ARCO_SIMPLES arco_simples;
+            arco_simples.index = cont_arco_s;
+            arco_simples.tipo_de_arco = completo[arco].tipo_de_arco;
+            arco_simples.i = completo[arco].i ;
+            arco_simples.j = completo[arco].j ;
+            arco_simples.a = completo[arco].a ;
+            arco_simples.c = completo[arco].c ;
+            grafo_simples.push_back(arco_simples);
+            if (arco_simples.tipo_de_arco == "location")
+                grafo_simples_loc.push_back(arco_simples);
+            ++cont_arco_s;
+        }else if (!(completo[arco].i == completo[arco - 1].i and completo[arco].j == completo[arco - 1].j)) {
+            ARCO_SIMPLES arco_simples;
+            arco_simples.index = cont_arco_s;
+            arco_simples.tipo_de_arco = completo[arco].tipo_de_arco;
+            arco_simples.i = completo[arco].i ;
+            arco_simples.j = completo[arco].j ;
+            arco_simples.a = completo[arco].a ;
+            arco_simples.c = completo[arco].c ;
+            grafo_simples.push_back(arco_simples);
+            if (arco_simples.tipo_de_arco == "location")
+                grafo_simples_loc.push_back(arco_simples);
+            ++cont_arco_s;
+        }
+    }
+
+    // tranforma o grafo_simples em um dicionário para consulta por par de nós
+    for (unsigned int i = 0; i < grafo_simples.size(); ++i) {
+        vector<string> key = {grafo_simples[i].i, grafo_simples[i].j};
+        grafo_simples_dic[key] = grafo_simples[i];
+        grafo_simples_idx[key] = i;
+    }
+
+    // encontra quais os produtos "s" presentes no grafo_pai
+    for (auto & arco : completo) {
+        string produto = arco.s;
+        if (produto.empty())continue;
+        if(!encontrar_elemento(produto,produtos)){
+            produtos.push_back(produto);
+            qnt_produtos++;
+        }
+    }
+
+    // quantidade de localidades
+    for (ARCO_SIMPLES & arco: grafo_simples){
+        if (arco.tipo_de_arco == "location") {
+            ++qnt_localidades;
+        }
+    }
+
+
+    // atribuindo valores ao struct do grafo_pai
+    completo_dic = grafo_completo_dic;
+    completo_idx = grafo_completo_idx;
+    simples = grafo_simples;
+    simples_loc = grafo_simples_loc;
+    simples_dic = grafo_simples_dic;
+    simples_idx = grafo_simples_idx;
+    vertices_completo_dic = vertices_completo_dic;
+    vertices = vertices;
+    produtos = produtos;
+    qnt_arcos_transporte = qnt_arcos_transporte;
+    qnt_arcos_localidade = qnt_arcos_localidade;
+    qnt_arcos = (int) completo.size();
+    qnt_localidades = qnt_localidades;
+    qnt_arcos_simples = (int) simples.size();
+    qnt_vertices = (int) vertices_completo.size();
+    qnt_produtos = qnt_produtos;
+    demandas_dic = demandas_dic;
+}
 
 
 template<typename T>
@@ -1083,44 +1121,39 @@ string refiner(IloEnv &env, IloModel model, IloCplex cplex,
 GRAFO grafo_pai = GRAFO(tipo_grafo::dummy);
 
 
-//
-//struct CycleElimitation: IloCplex::LazyConstraintCallbackI {
-//    IloEnv &env;
-////    IloNumVarArray &y;
-//    vector<ARCO> arcos;
-//
-//    CycleElimitation(IloEnv &env, vector<ARCO> &arcos) :
-//            LazyConstraintCallbackI{env}, env{env}, arcos{arcos} {}
-//
-//    [[nodiscard]] IloCplex::CallbackI* duplicateCallback() const override {
-//        return new(env) CycleElimitation{*this};
-//    }
-//
-//    void main() override{
-//        vector<IloNum> y_values;
-//        for(ARCO arco : grafo_pai.completo){
-//            IloNum y_value = getValue(*arco.y_ptr);
-//            y_values.push_back(y_value);
-//            cout << endl << "VAR VALUE: " << y_value << endl;
-//            add(*arco.y_ptr <= 10); // restricao teste
-//        }
-//
-//    };
-//};
-//
-
-ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,vector<ARCO>&, arcos){
+ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,GRAFO&, grafo){
 //    IloEnv &env;
 //    IloNumVarArray &y;
-//    vector<ARCO> arcos;
+    IloNum y_value;
 
-    vector<IloNum> y_values;
-    for(ARCO& arco : arcos){
-        IloNum y_value = getValue(*arco.y_ptr);
-        y_values.push_back(y_value);
-        cout << endl << "VAR VALUE: " << y_value << endl;
-        add(*arco.y_ptr <= 10); // restricao teste
+    // Get flows bigger then zero
+    map<int,IloNum> y_values;
+    for(ARCO& arco : grafo.completo){
+        y_values.insert(pair<int,IloNum>(arco.index,getValue(*arco.y_ptr)));
     }
+    grafo.find_cycles(y_values,true,true);
+
+    for(ARCO& arco : grafo.completo){
+//        continue;
+        y_value = getValue(*arco.y_ptr);
+        cout << endl << "VAR VALUE: " << y_value << endl;
+        add(*arco.y_ptr <= 15); // restricao teste
+    }
+
+    // restição de ciclos
+    /*
+     * CC: conjunto de ciclos
+     * C: conjunto de vertices que representa um ciclo
+     * |C|: cardinalidade de C
+     * w_ijs = {0,1 | ij is in ARCOS, s is in Produtos }
+     * w_ijs = binário que indica o se um determinado arco está sendo usado
+     *
+     * FO: y_ijs <= M * w_ijs  // liga o binário caso o fluxo y_ijs seja utilizado
+     * s.a. : sum[w_ijs in C](w_ijs) < |C| forall(C in CC)
+     *
+    */
+
+
 
 };
 
@@ -1163,11 +1196,6 @@ int flow(bool baseline = false,
         dic_var = dics_var.dic_var;
         dic_var_modelo = dics_var.dic_var_modelo;
 
-        if(find_cycles) {
-            // todo: montar grafo_pai a partir das rotas com volume alocado.
-            grafo_pai.find_cycles(true);
-        }
-        cout << endl ;
 
         IloModel model(env);
         // constantes para as variáveis auxiliares z
@@ -1293,7 +1321,6 @@ int flow(bool baseline = false,
         }
 
         //RESTRIÇAO DE CICLOS lazy constraint
-
         /*
          * sum[w_ijs in C'](w_ijs) < |c| forall(C' in C)
          * y_ijs <= M * w_ijs  // liga o binário caso o fluxo y_ijs seja utilizado
@@ -1305,37 +1332,24 @@ int flow(bool baseline = false,
          * w_ijs = binário que indica o se um determinado arco está sendo usado
         */
 
-
-//        for(GRAFO subgrafo: grafo_pai.subgrafos){
-//            break;
-//            if (subgrafo.tipo != tipo_grafo::ciclo) break;
-//            GRAFO& ciclo = subgrafo;
-//            size_t qnt_vertices = ciclo.qnt_vertices;
-//
-//            // seleciona as variáveis "w_ptr" e "y_ptr" que fazem parte do ciclo
-//            IloBoolVarArray w_sum;
-//            for(ARCO arco: ciclo.completo){
-//                w_sum.add(w_ptr[arco.index]);
-//                model.add(y_ptr[arco.index] <= ciclo.bigM * w_ptr[arco.index]);
-//            }
-//            model.add(IloSum(w_sum) < qnt_vertices);
-//        }
-
-
-
-//        string uf = UFs[0];
-//        cout << grafo_pai.entradas_uf(uf)[0].index << endl;
-//        cout << grafo_pai.saidas_uf(uf)[0].index << endl;
+        // restrição para ligar os binários W que serão usados no corte.
+        for(ARCO& arco: grafo_pai.completo){
+            model.add(*arco.w_ptr * grafo_pai.bigM >= *arco.y_ptr); // W entra na FO
+        }
 
         print_running_time("Model construction end");
 
         // Optimize
         cout << endl << "Optimization start" << endl;
         IloCplex cplex(model);
-//        cplex.addLazyConstraint(CycleElimitation);
 
-        // chama a lazy constraint para o modelo
-        cplex.use(CycleElimitation(env,grafo_pai.completo));
+        if(find_cycles) {
+            // todo: mudar find_cycles parar receber parametro para encontrar cyclos apenas em rotas com volume alocado
+            // chama a lazy constraint para o modelo
+            cplex.use(CycleElimitation(env,grafo_pai));
+//            grafo_pai.find_cycles(env,true, true);
+        }
+        cout << endl ;
 
         // parametros de exempo de cplex iloadmipex8
 //        cplex.setParam(IloCplex::Param::Preprocessing::Presolve, 0);
