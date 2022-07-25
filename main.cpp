@@ -271,7 +271,7 @@ vector<DEMANDA> ler_csv_demandas(const std::string &nome_arquivo, std::string de
 
 struct GRAFO{
     private:
-    void find_components(map<int,IloNum> arcs);
+    void find_components(map<int,IloNum> arcs_vol);
 
     public:
     void find_cycles(map<int,IloNum> arcs, bool print_cycles, bool alocated_arcs);
@@ -588,7 +588,7 @@ void GRAFO::find_cycles(map<int,IloNum> arcs, bool print_cycles, bool alocated_a
 
 }
 
-void GRAFO::find_components(map<int,IloNum> arcs) {
+void GRAFO::find_components(map<int,IloNum> arcs_vol) {
 //    For each vertex u of the graph, mark u as unvisited. Let L be empty.
 //            For each vertex u of the graph do Visit(u), where Visit(u) is the recursive subroutine:
 //    If u is unvisited then:
@@ -606,7 +606,7 @@ void GRAFO::find_components(map<int,IloNum> arcs) {
     vector<ARCO> arcos_com_volume;
     std::set<VERTICE> vertices_com_volume;
     for (ARCO& a: completo){
-        if(arcs[a.index] > 0){ //define o limitar do volume para considerar um ciclo
+        if(arcs_vol[a.index] > 0){ //define o limitar do volume para considerar um ciclo
             arcos_com_volume.push_back(a);
             for (VERTICE& u: vertices_completo){
                 if(u.vertice == a.i or u.vertice == a.j) {
@@ -614,7 +614,7 @@ void GRAFO::find_components(map<int,IloNum> arcs) {
                 }
             }
             //debug
-//            cout << "arco: \t" << a.name() << "\tvol solver: \t" << arcs[a.index] << endl;
+//            cout << "arco: \t" << a.name() << "\tvol solver: \t" << arcs_vol[a.index] << endl;
         }
     }
 
@@ -1122,24 +1122,6 @@ GRAFO grafo_pai = GRAFO(tipo_grafo::dummy);
 
 
 ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,GRAFO&, grafo){
-//    IloEnv &env;
-//    IloNumVarArray &y;
-    IloNum y_value;
-
-    // Get flows bigger then zero
-    map<int,IloNum> y_values;
-    for(ARCO& arco : grafo.completo){
-        y_values.insert(pair<int,IloNum>(arco.index,getValue(*arco.y_ptr)));
-    }
-    grafo.find_cycles(y_values,true,true);
-
-    for(ARCO& arco : grafo.completo){
-//        continue;
-        y_value = getValue(*arco.y_ptr);
-        cout << endl << "VAR VALUE: " << y_value << endl;
-        add(*arco.y_ptr <= 15); // restricao teste
-    }
-
     // restição de ciclos
     /*
      * CC: conjunto de ciclos
@@ -1153,6 +1135,26 @@ ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,GRAFO&, grafo){
      *
     */
 
+    IloNum y_value;
+
+    // Encontra ciclos no modelo
+    map<int,IloNum> y_values;
+    for(ARCO& arco : grafo.completo){
+        y_values.insert(pair<int,IloNum>(arco.index,getValue(*arco.y_ptr)));
+    }
+    grafo.find_cycles(y_values,true,true);
+
+    // ADICIONA RESTRICAO PARA ELIMINACAO DE CICLOS
+    for(GRAFO& subgrafo: grafo.subgrafos){
+        if(subgrafo.tipo == tipo_grafo::ciclo){
+            IloBoolVarArray w_sum = IloBoolVarArray(getEnv());
+            for(ARCO& arco: subgrafo.completo){
+                w_sum.add(*arco.w_ptr);
+            }
+            cout << w_sum << " < " << subgrafo.qnt_vertices << endl; // debug
+            add(IloSum(w_sum) < subgrafo.qnt_vertices);
+        }
+    }
 
 
 };
@@ -1351,6 +1353,7 @@ int flow(bool baseline = false,
         }
         cout << endl ;
 
+        // PARAMETROS CPLEX
         // parametros de exempo de cplex iloadmipex8
 //        cplex.setParam(IloCplex::Param::Preprocessing::Presolve, 0);
 //        cplex.setParam(IloCplex::Param::MIP::Strategy::HeuristicFreq, -1);
@@ -1369,7 +1372,6 @@ int flow(bool baseline = false,
 //        cplex.setOut(env.getNullStream());
         cplex.setWarning(env.getNullStream());
         //dumping model and fixing variable names in model file.
-//        cplex.extract(model);
         cplex.exportModel("dados/debug/modelo.lp");
         fstream model_file;
         string model_file_str;
@@ -1541,6 +1543,8 @@ int flow(bool baseline = false,
            csv_fluxos << flow_vol << endl;
         }
         csv_fluxos.close();
+        // print final model
+        cplex.exportModel("dados/debug/modelo_final.lp");
     }
     catch (IloException& ex) {
         cerr << "Error: " << ex << endl;
