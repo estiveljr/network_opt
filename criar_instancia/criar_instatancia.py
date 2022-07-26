@@ -23,42 +23,58 @@ arco = namedtuple("arco", ['tipo_de_arco', 'i', 'j', 's', 'a', 'b', 'c', 'm', 'n
 
 # CONFIGURAÇÃO PARA A CONSTRUÇÃO DA INSTÂNCIA
 # DEFINE SE O GRAFO SERÁ GERADO POR N ELEMENTOS OU POR LISTAS DE VÉRTICES
-INPUT_DATA = True
-OUTPUT_FOLDER = "F:/OneDrive/_each/_Quali/artigo/dados/dados_oficiais/"
-DATA_NAME = "sbpo"
+# INPUT_DATA = True #read data from file
+# OUTPUT_FOLDER = "F:/OneDrive/_each/_Quali/artigo/dados/dados_oficiais/"
+# DATA_NAME = "sbpo"
+
+INPUT_DATA = False
+# OUTPUT_FOLDER = "F:/OneDrive/_each/_Quali/artigo/dados/dados_artificiais/"
+OUTPUT_FOLDER = "../dados/dados_artificiais/"
+DATA_NAME = "artificial_"
 
 # Read node data from csv file
-df_nodes_input = pd.read_excel("input.xlsx", sheet_name='nodes')
-suppliers = df_nodes_input['node name'][df_nodes_input['node type'] == 'supplier']
-factories = df_nodes_input['node name'][df_nodes_input['node type'] == 'factory']
-facilyties = df_nodes_input['node name'][df_nodes_input['node type'] == 'facility']
-clients = df_nodes_input['node name'][df_nodes_input['node type'] == 'client']
-goods = pd.read_excel("input.xlsx", sheet_name='goods')['good']
+if INPUT_DATA:
+    df_nodes_input = pd.read_excel("input.xlsx", sheet_name='nodes')
+    suppliers = df_nodes_input['node name'][df_nodes_input['node type'] == 'supplier']
+    factories = df_nodes_input['node name'][df_nodes_input['node type'] == 'factory']
+    facilyties = df_nodes_input['node name'][df_nodes_input['node type'] == 'facility']
+    clients = df_nodes_input['node name'][df_nodes_input['node type'] == 'client']
+    goods = pd.read_excel("input.xlsx", sheet_name='goods')['good']
 
-# Define node data from set size of each kind
-n_suppliers = 5
-n_facilyties = 5
-n_factories = 5
-n_clients = 20
-n_goods = 10
+# Define data from set size of each level (if not read from file)
+n_suppliers = 10
+n_factories = 10
+n_facilyties = 10
+n_clients = 500
+n_goods = 100
+
+if not INPUT_DATA:
+    DATA_NAME = DATA_NAME + "sup{}_fac{}_fcl{}_clt{}_gds{}".format(
+        n_suppliers,
+        n_factories,
+        n_facilyties,
+        n_clients,
+        n_goods
+    )
+
 # Define a demanda total
 FULL_DEMAND = 1E3
 
 # Define iteratarators to create the arcs
 if INPUT_DATA:
     sups_iterator = suppliers
-    fac_iterator = facilyties
     flt_iterator = factories
+    fac_iterator = facilyties
     clt_iterator = clients
     goods_iterator = goods
 else:
     sups_iterator = range(n_suppliers)
-    fac_iterator = range(n_facilyties)
     flt_iterator = range(n_factories)
+    fac_iterator = range(n_facilyties)
     clt_iterator = range(n_clients)
     goods_iterator = range(n_goods)
 
-# Define range de custos abertos
+# Define range of costs
 def custo_fixo(tipo_de_arco, i, s) -> float:
     if tipo_de_arco == "location":
         return randrange(int(10e3), int(100e3))
