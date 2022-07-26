@@ -31,6 +31,7 @@ INPUT_DATA = False
 # OUTPUT_FOLDER = "F:/OneDrive/_each/_Quali/artigo/dados/dados_artificiais/"
 OUTPUT_FOLDER = "../dados/dados_artificiais/"
 DATA_NAME = "artificial_"
+SEPARATOR = ";"
 
 # Read node data from csv file
 if INPUT_DATA:
@@ -330,19 +331,19 @@ except:
     print("Base de dados muito grande. Apenas o csv sará salvo.")
 
 try:
-    df_arcos_consolidados.to_csv(OUTPUT_FOLDER + DATA_NAME + "_arcos.csv", index=False)
+    df_arcos_consolidados.to_csv(OUTPUT_FOLDER + DATA_NAME + "_arcos.csv", index=False, sep=SEPARATOR)
     print("Csvs salvos com sucesso.")
 except:
     print("Erro em salvar os csvs.")
 
 try:
-    df_vertices.to_csv(OUTPUT_FOLDER + DATA_NAME + "_vertices.csv", index=False)
+    df_vertices.to_csv(OUTPUT_FOLDER + DATA_NAME + "_vertices.csv", index=False, sep=SEPARATOR)
     print("Csv de UF por vertice salvo com sucesso.")
 except:
     print("Erro em salvar os csv de UF por vertice.")
 
 try:
-    df_demandas_fornecimento.to_csv(OUTPUT_FOLDER + DATA_NAME + "_dem_forn.csv", index=False)
+    df_demandas_fornecimento.to_csv(OUTPUT_FOLDER + DATA_NAME + "_dem_forn.csv", index=False, sep=SEPARATOR)
     print("Csv de demandas e fornecimento salvo com sucesso.")
 except:
     print("Erro em salvar os csv de demandas e fornecimento.")
