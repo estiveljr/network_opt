@@ -24,7 +24,7 @@ using namespace std;
 //static string caminho = "/mnt/f/OneDrive/_each/_Quali/artigo/";
 static string caminho = filesystem::current_path().string() + "/";
 
-bool DEBUG = true;
+bool DEBUG = false;
 
 auto start_time = chrono::high_resolution_clock::now();
 auto last_time = start_time;
@@ -384,6 +384,22 @@ struct GRAFO{
 
     //adicionar um subgrafo ao grafo_pai.
     void add_subgrafo(tipo_grafo tg, vector<VERTICE> &sub_vertices){
+        // verifica se o subgrafo já existe.
+        for(auto sub : this->subgrafos){
+            if(tg == sub.tipo){
+                for(auto va : sub.vertices) {
+                    bool vaInB = false;
+                    for (auto vb: sub_vertices) {
+                        if (va == vb.vertice) {
+                            vaInB = true;
+                        }
+                    }
+                    if (vaInB) {
+                        return;
+                    }
+                }
+            }
+        }
         vector<ARCO> sub_arcos;
         vector<DEMANDA> sub_demandas;
         for (ARCO a: GRAFO::completo) {
@@ -403,7 +419,6 @@ struct GRAFO{
             }
         }
         GRAFO subgrafo = GRAFO("subgrafo",tg, sub_vertices, sub_arcos, sub_demandas);
-//        GRAFO sub = GRAFO("TESTe", tipo_grafo::componente);
         subgrafos.push_back(subgrafo);
     }
 
@@ -565,7 +580,6 @@ void GRAFO::find_cycles(map<int,IloNum> arcs, bool print_cycles, bool alocated_a
         }
     }
     if(print_cycles){
-        cout << endl << "ENCONTRA CICLOS:" << endl;
         cout << endl << "COMPONENTES" << endl;
         for (GRAFO subg: this->subgrafos) {
             if (subg.tipo == tipo_grafo::componente) {
@@ -613,8 +627,6 @@ void GRAFO::find_components(map<int,IloNum> arcs_vol) {
                     vertices_com_volume.insert(u);
                 }
             }
-            //debug
-//            cout << "arco: \t" << a.name() << "\tvol solver: \t" << arcs_vol[a.index] << endl;
         }
     }
 
@@ -623,9 +635,33 @@ void GRAFO::find_components(map<int,IloNum> arcs_vol) {
         visit(u);
     }
 
+    // adicionar componentes ao grafo
     while(!finished_stack.empty()){
         assign(finished_stack.top(),finished_stack.top());
         finished_stack.pop();
+    }
+
+    //remove componentes duplicados
+    for(auto comp_a : this->components){
+        for(auto comp_b : this->components) {
+//            auto mapPosA = this->components.find(comp_a.first);
+//            auto mapPosB = this->components.find(comp_b.first);
+            if(comp_a.first == comp_b.first) break;
+            for (VERTICE a: comp_a.second) {
+                bool AinB = false;
+                for (VERTICE b: comp_b.second) {
+                    if (a.vertice == b.vertice) {
+                        AinB = true;
+                        break;
+                    }
+                }
+                if(!AinB){
+                    break;
+                }
+            }
+            auto k = find(this->components.begin(), this->components.end(),comp_b);
+            this->components.erase(k);
+        }
     }
 
     //cria uma lista de subgrafos a partir dos componentes
@@ -1135,9 +1171,9 @@ ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,GRAFO&, grafo){
      *
     */
 
-    IloNum y_value;
-
     // Encontra ciclos no modelo
+
+    cout << "\n ** REMOVENDO CIRCUITOS **" << endl;
     map<int,IloNum> y_values;
     for(ARCO& arco : grafo.completo){
         y_values.insert(pair<int,IloNum>(arco.index,getValue(*arco.y_ptr)));
@@ -1151,7 +1187,7 @@ ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,GRAFO&, grafo){
             for(ARCO& arco: subgrafo.completo){
                 w_sum.add(*arco.w_ptr);
             }
-            cout << w_sum << " < " << subgrafo.qnt_vertices << endl; // debug
+//            cout << w_sum << " < " << subgrafo.qnt_vertices << endl; // debug
             add(IloSum(w_sum) < subgrafo.qnt_vertices);
         }
     }
@@ -1406,6 +1442,7 @@ int flow(bool baseline = false,
                     tmp_str_word = word;
                 }
                 //limit line by words and chars
+                word_count = 0;
                 if(line_size <= line_limit and word_count <= word_limit){
                     line_size += tmp_str_word.length() + tmp_str_whitespace.length();
                     word_count++;
