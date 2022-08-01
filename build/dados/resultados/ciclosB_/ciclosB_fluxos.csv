@@ -1,0 +1,8 @@
+org;dest;sku;volume
+A-out;Ain;S;11,000000
+Bout;A-out;S;1,000000
+Ain;Aout;S;11,000000
+Aout;Bin;S;11,000000
+Bout;Ain;S;0,000000
+Bin;Bout;S;11,000000
+Bout;B+in;S;10,000000

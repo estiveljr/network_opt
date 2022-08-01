@@ -3,33 +3,18 @@ from random import randrange
 
 import pandas as pd
 
-# arco_location = namedtuple("arco_location", ['i', 'j', 'custo_fixo', 'capacidade'])
-# arco_transportation = namedtuple("arco_transportation", ['i', 'j', 's',
-#                                                  'custo_variavel',
-#                                                  'icms_st',
-#                                                  'custos_fornecimento',
-#                                                  'icms',
-#                                                  'cred_pres',
-#                                                  'difal',
-#                                                  'anulacao'])
-
-
-# arco_location = namedtuple("arco_location", ['i', 'j', 's', 'a', 'b', 'c', 'm', 'n'])
-# arco_transportation = namedtuple("arco_transportation", ['i', 'j', 's', 'a', 'b', 'c', 'm', 'n'])
-# arco_location = namedtuple("arco_location", ['i', 'j'])
-# arco_transportation = namedtuple("arco_transportation", ['i', 'j', 's'])
-
 arco = namedtuple("arco", ['tipo_de_arco', 'i', 'j', 's', 'a', 'b', 'c', 'm', 'n'])
 
 # CONFIGURAÇÃO PARA A CONSTRUÇÃO DA INSTÂNCIA
 # DEFINE SE O GRAFO SERÁ GERADO POR N ELEMENTOS OU POR LISTAS DE VÉRTICES
+
 # INPUT_DATA = True #read data from file
 # OUTPUT_FOLDER = "F:/OneDrive/_each/_Quali/artigo/dados/dados_oficiais/"
 # DATA_NAME = "sbpo"
+# SEPARATOR = ";"
 
-INPUT_DATA = False
-# OUTPUT_FOLDER = "F:/OneDrive/_each/_Quali/artigo/dados/dados_artificiais/"
-OUTPUT_FOLDER = "../dados/dados_artificiais/"
+INPUT_DATA = False #read from file
+OUTPUT_FOLDER = "../build/dados/"
 DATA_NAME = "artificial_"
 SEPARATOR = ";"
 
@@ -46,11 +31,11 @@ if INPUT_DATA:
 n_suppliers = 10
 n_factories = 10
 n_facilyties = 10
-n_clients = 500
-n_goods = 100
+n_clients = 100
+n_goods = 50
 
 if not INPUT_DATA:
-    DATA_NAME = DATA_NAME + "sup{}_fac{}_fcl{}_clt{}_gds{}".format(
+    DATA_NAME = DATA_NAME + "s{}_f{}_f{}_c{}_g{}".format(
         n_suppliers,
         n_factories,
         n_facilyties,
@@ -59,7 +44,7 @@ if not INPUT_DATA:
     )
 
 # Define a demanda total
-FULL_DEMAND = 1E3
+FULL_DEMAND = 1E6
 
 # Define iteratarators to create the arcs
 if INPUT_DATA:
@@ -320,6 +305,21 @@ df_demandas_fornecimento.loc[df_demandas_fornecimento["tipo"] == "origem", "o"] 
 df_demandas_fornecimento.loc[df_demandas_fornecimento["tipo"] == "demanda", "d"] = FULL_DEMAND / qnt_clientes_sku
 df_demandas_fornecimento = df_demandas_fornecimento[["vertice", "s", "UF", "tipo", "d", "o"]]
 
+def create_wsl_bat(sup,fac,fcl,clt,gds):
+
+    bat = "C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c " \
+          "\"cd /mnt/d/OneDrive/_each/_Quali/Artigo/build " \
+          "&& /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp " \
+          "-c artificial_s{}_f{}_f{}_c{}_g{}_\"" \
+          "\n %pause".format(sup,fac,fcl,clt,gds)
+    try:
+        with open(OUTPUT_FOLDER + "rodar_build_s{}_f{}_f{}_c{}_g{}.bat".format(sup,fac,flt,clt,gds), "w") as file:
+            file.write(bat)
+
+        print(".bat salvo com sucesso")
+    except:
+        print("Não foi possível salvar o arquivo .bat")
+
 
 try:
     with pd.ExcelWriter(OUTPUT_FOLDER + DATA_NAME + '_malha.xlsx') as writer:
@@ -333,6 +333,7 @@ except:
 try:
     df_arcos_consolidados.to_csv(OUTPUT_FOLDER + DATA_NAME + "_arcos.csv", index=False, sep=SEPARATOR)
     print("Csvs salvos com sucesso.")
+    create_wsl_bat(n_suppliers,n_factories,n_facilyties,n_clients,n_goods)
 except:
     print("Erro em salvar os csvs.")
 

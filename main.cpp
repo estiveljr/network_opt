@@ -567,7 +567,6 @@ void GRAFO::find_cycles(map<int,IloNum> arcs, bool print_cycles, bool alocated_a
         for(const VERTICE& vertice: comp.vertices_completo) {
             print_subg(comp);
             s = vertice;
-            //print vertice origem s.
             for(VERTICE i: comp.vertices_completo){
                 // limpa os vetores antes de iniciar outro circuito
                 blocked[i.vertice] = false;
@@ -638,29 +637,6 @@ void GRAFO::find_components(map<int,IloNum> arcs_vol) {
     while(!finished_stack.empty()){
         assign(finished_stack.top(),finished_stack.top());
         finished_stack.pop();
-    }
-
-    //remove componentes duplicados
-    for(auto comp_a : this->components){
-        for(auto comp_b : this->components) {
-//            auto mapPosA = this->components.find(comp_a.first);
-//            auto mapPosB = this->components.find(comp_b.first);
-            if(comp_a.first == comp_b.first) break;
-            for (VERTICE a: comp_a.second) {
-                bool AinB = false;
-                for (VERTICE b: comp_b.second) {
-                    if (a.vertice == b.vertice) {
-                        AinB = true;
-                        break;
-                    }
-                }
-                if(!AinB){
-                    break;
-                }
-            }
-            auto k = find(this->components.begin(), this->components.end(),comp_b);
-            this->components.erase(k);
-        }
     }
 
     //cria uma lista de subgrafos a partir dos componentes
@@ -1177,18 +1153,26 @@ ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,GRAFO&, grafo){
     for(ARCO& arco : grafo.completo){
         y_values.insert(pair<int,IloNum>(arco.index,getValue(*arco.y_ptr)));
     }
-    grafo.find_cycles(y_values,true,true);
+
+    try{
+        grafo.find_cycles(y_values,true,true);
+    }catch(...){
+        cout << "Erro ao encontrar ciclos" << endl;
+    }
 
     // ADICIONA RESTRICAO PARA ELIMINACAO DE CICLOS
-    for(GRAFO& subgrafo: grafo.subgrafos){
-        if(subgrafo.tipo == tipo_grafo::ciclo){
-            IloBoolVarArray w_sum = IloBoolVarArray(getEnv());
-            for(ARCO& arco: subgrafo.completo){
-                w_sum.add(*arco.w_ptr);
+    try{
+        for(GRAFO& subgrafo: grafo.subgrafos){
+            if(subgrafo.tipo == tipo_grafo::ciclo){
+                IloBoolVarArray w_sum = IloBoolVarArray(getEnv());
+                for(ARCO& arco: subgrafo.completo){
+                    w_sum.add(*arco.w_ptr);
+                }
+                add(IloSum(w_sum) < subgrafo.qnt_vertices);
             }
-//            cout << w_sum << " < " << subgrafo.qnt_vertices << endl; // debug
-            add(IloSum(w_sum) < subgrafo.qnt_vertices);
         }
+    }catch (...){
+        cout << "Erro ao adicionar lazy constraint" << endl;
     }
 
 
@@ -1404,6 +1388,7 @@ int flow(bool baseline = false,
         // parametros originais
         cplex.setParam(IloCplex::Param::TimeLimit, time_limit_sec);
         cplex.setParam(IloCplex::Param::Threads, 8);
+//        cplex.setParam(IloCplex::Param::MIP::Tolerances::AbsMIPGap, 1);
 //        cplex.setOut(env.getNullStream());
         cplex.setWarning(env.getNullStream());
         //dumping model and fixing variable names in model file.
@@ -1487,7 +1472,6 @@ int flow(bool baseline = false,
             cout << "Salvando modelo" << endl;
             cout << "POSSÍVEL CONFLITO:" << endl;
             string conflict = refiner(env,model,cplex,false,false);
-//            cout << conflict << endl;
             cout << replace_vars(conflict,dic_var) << endl;
         }
 
@@ -1498,12 +1482,17 @@ int flow(bool baseline = false,
         cout << "Relative GAP: " << cplex.getMIPRelativeGap() << endl;
         env.out() << endl << "LOCALIDADES" << endl;
 
+        // Preparativos para salvar os resultados
+        filesystem::create_directories("dados/resultados/" + data_name); // Cria pasta para salvar os resultados
+        string ciclos = "";
+        if(find_cycles) ciclos = "CIR_REM_";
+
         // define arquivo a ser salvo conforme se otimizado ou baseline
         string nome_arquivo_localidades;
         if(baseline) {
-            nome_arquivo_localidades = "dados/resultados/" + data_name + "baseline_localidades.csv";
+            nome_arquivo_localidades = "dados/resultados/" + data_name + "/" + ciclos + data_name+ "baseline_localidades.csv";
         }else{
-            nome_arquivo_localidades = "dados/resultados/" + data_name + "localidades.csv";
+            nome_arquivo_localidades = "dados/resultados/" + data_name + "/" + ciclos + data_name+ "localidades.csv";
         }
         ofstream csv_localidades (caminho + nome_arquivo_localidades);
 
@@ -1540,9 +1529,9 @@ int flow(bool baseline = false,
         // define arquivo a ser salvo conforme se otimizado ou baseline
         string nome_arquivo_saldos;
         if(baseline) {
-            nome_arquivo_saldos = "dados/resultados/" + data_name + "baseline_saldos.csv";
+            nome_arquivo_saldos = "dados/resultados/" + data_name + "/" + ciclos + data_name + "baseline_saldos.csv";
         }else{
-            nome_arquivo_saldos = "dados/resultados/" + data_name + "saldos.csv";
+            nome_arquivo_saldos = "dados/resultados/" + data_name + "/" + ciclos + data_name + "saldos.csv";
         }
         ofstream csv_saldos (caminho + nome_arquivo_saldos);
         csv_saldos << "UF;Saldo" << endl;
@@ -1551,34 +1540,41 @@ int flow(bool baseline = false,
         string valor_saldo;
         for(int u = 0; u < 27; u++){
             valor_saldo_num = cplex.getValue(z[u]);
-            total_icms += valor_saldo_num;
+            if(valor_saldo_num >= 0) total_icms += valor_saldo_num;
             string valor_saldo = to_string(valor_saldo_num);
             env.out() << UFs[u] << " -> " << valor_saldo << endl;
             csv_saldos << UFs[u] << ";" << valor_saldo << endl;
         }
+        csv_saldos << "Total ICMS:  " << ";" << total_icms << endl;
         cout << "Total ICMS: " << total_icms << endl;
         csv_saldos.close();
 
         cout << "Salvando fluxos" << endl;
         // define arquivo a ser salvo conforme se otimizado ou baseline
         string nome_arquivo_fluxos;
-        if(baseline) {
-            nome_arquivo_fluxos = "dados/resultados/" + data_name + "baseline_fluxos.csv";
-        }else{
-            nome_arquivo_fluxos = "dados/resultados/" + data_name + "fluxos.csv";
-        }
-        ofstream csv_fluxos (caminho + nome_arquivo_fluxos);
+        try{
+            if(baseline) {
+                nome_arquivo_fluxos = "dados/resultados/" + data_name + "/" + ciclos + data_name + "baseline_fluxos.csv";
+            }else{
+                nome_arquivo_fluxos = "dados/resultados/" + data_name + "/" + ciclos + data_name + "fluxos.csv";
+            }
+            ofstream csv_fluxos (caminho + nome_arquivo_fluxos);
 
-        for(int i = 0; i < grafo_pai.qnt_arcos; i++){
-            string flow_vol = to_string(cplex.getValue(y[i]));
-            if(flow_vol.find(".") < 1e20) flow_vol.replace(flow_vol.find("."),1,",");
-            if(i==0) csv_fluxos << "org;dest;sku;volume" << endl;
-           csv_fluxos << grafo_pai.completo[i].i << ";";
-            csv_fluxos << grafo_pai.completo[i].j << ";";
-            csv_fluxos << grafo_pai.completo[i].s << ";";
-           csv_fluxos << flow_vol << endl;
+            for(int i = 0; i < grafo_pai.qnt_arcos; i++){
+                string flow_vol = to_string(cplex.getValue(y[i]));
+                if(flow_vol.find(".") < 1e20) flow_vol.replace(flow_vol.find("."),1,",");
+                if(i==0) csv_fluxos << "org;dest;sku;volume" << endl;
+               csv_fluxos << grafo_pai.completo[i].i << ";";
+                csv_fluxos << grafo_pai.completo[i].j << ";";
+                csv_fluxos << grafo_pai.completo[i].s << ";";
+               csv_fluxos << flow_vol << endl;
+            }
+            csv_fluxos.close();
+        }catch(...){
+            cout << "Erro ao salvar fluxos de resultado" << endl;
         }
-        csv_fluxos.close();
+
+
         // print final model
         cplex.exportModel("dados/debug/modelo_final.lp");
     }
@@ -1598,9 +1594,6 @@ int main(int argc, char* argv[]) {
     string data_name;
     data_name = "teste_";
     float time_limit_sec = 10*60;
-//    data_name = "sem_prodepe_";
-//    data_name = "com_prodepe_";
-//    data_name = "merc10_";
     if (argc > 0){
         for(int i = 0; i < argc; i++){
             cout << i << ": ";
@@ -1614,6 +1607,7 @@ int main(int argc, char* argv[]) {
     }
 
     while(true){
+        flow(false,false, time_limit_sec,data_name);
         flow(false,true, time_limit_sec,data_name);
         cout << "Press \"s\" to run again" << endl;
         cin >> loop_input;
@@ -1622,14 +1616,6 @@ int main(int argc, char* argv[]) {
             break;
         }
     }
-
-//    DEBUG
-//    string str = " -1 * IloNumVar(37)[0 .. inf]  == -0 == 10";
-//    string separator = "==";
-//    vector<string> partes = split(str,separator);
-//    cout << "primeira parte na main: " << partes[0] << endl;
-//    cout << "segunda parte na main: " << partes[1] << endl;
-//    cout << "segunda parte na main: " << partes[2] << endl;
 
     return 0;
 }

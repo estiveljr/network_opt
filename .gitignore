@@ -21,7 +21,6 @@ dados/originais_jequiti/
 build/dados/debug
 build/dados/debug/
 build/dados/debug/*.*
-build/dados/resultados
 build/dados/teste
 build/dados/resultados/*.xlsx
 build/dados/resultados/xlsx/
