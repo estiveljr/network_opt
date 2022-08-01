@@ -568,7 +568,6 @@ void GRAFO::find_cycles(map<int,IloNum> arcs, bool print_cycles, bool alocated_a
             print_subg(comp);
             s = vertice;
             //print vertice origem s.
-//                if (DEBUG) cout << "Inicio: \t" << s.vertice << endl;
             for(VERTICE i: comp.vertices_completo){
                 // limpa os vetores antes de iniciar outro circuito
                 blocked[i.vertice] = false;
