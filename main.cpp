@@ -17,18 +17,35 @@
 
 using namespace std;
 
+// GLOBALS
+
 //caminho sin
 //static string caminho = "F:\\OneDrive\\_each\\_Quali\\Artigo\\modelocpp\\";
 
 //caminho wsl
 //static string caminho = "/mnt/f/OneDrive/_each/_Quali/artigo/";
 static string caminho = filesystem::current_path().string() + "/";
-
 bool DEBUG = false;
-
 auto start_time = chrono::high_resolution_clock::now();
 auto last_time = start_time;
-void print_running_time(string msg = ""){
+auto total_time = last_time - start_time;
+map<int,IloNum> y_values_anterior;
+
+enum tipo_grafo{
+    original,
+    ciclo,
+    componente,
+    dummy,
+};
+
+enum place{
+    none,
+    begin,
+    end,
+    closed,
+};
+
+void print_running_time(string msg = "", place p = place::none){
     auto now= chrono::high_resolution_clock::now();
     auto running = chrono::duration_cast<chrono::seconds>(now - last_time);
     auto running_m = running.count()/60;
@@ -37,20 +54,18 @@ void print_running_time(string msg = ""){
     auto total_m = total.count()/60;
     auto total_s = total.count()%60;
 
+    if(p == place::begin or p == place::closed) cout << "-------------------------------------------------------";
     cout << endl;
     if (msg != "") cout << msg << endl;
-    cout << "Running time: \t" << running_m << "m" << running_s << "s\t";
-    cout << "Total time: \t" << total_m << "m" << total_s << "s\t" << endl;
-    cout << "---------------------------------------------" << endl;
+    cout << ">> Running time: \t" << running_m << "m" << running_s << "s\t";
+    cout << ">> Total time: \t" << total_m << "m" << total_s << "s\t" << endl;
+    if(p == place::end or p == place::closed) cout << "-------------------------------------------------------";
+    cout << endl;
     last_time = now;
+    total_time = last_time - start_time;
 }
 
-enum tipo_grafo{
-    original,
-    ciclo,
-    componente,
-    dummy,
-};
+
 
 struct ARCO {
     int index;
@@ -554,6 +569,16 @@ void GRAFO::find_cycles(map<int,IloNum> arcs, bool print_cycles, bool alocated_a
     //seleciona apenas os subgrafos do tipo componente.
 
     this->find_components(arcs);
+    // printa a quantidade de componentes
+    if(print_cycles) {
+        int qnt_componentes = 0;
+        for (GRAFO subg: this->subgrafos) {
+            if (subg.tipo == tipo_grafo::componente) {
+                qnt_componentes++;
+            }
+        }
+    cout << "QNT COMPONENTES: " << qnt_componentes << endl;
+    }
     vector<GRAFO> componentes;
     for(GRAFO& subg: this->subgrafos) {
         if (subg.tipo == tipo_grafo::componente) componentes.push_back(subg);
@@ -577,16 +602,19 @@ void GRAFO::find_cycles(map<int,IloNum> arcs, bool print_cycles, bool alocated_a
             if(dummy){}
         }
     }
+    print_running_time("Deteccao de ciclos terminada.");
     if(print_cycles){
-        cout << endl << "COMPONENTES" << endl;
-        for (GRAFO subg: this->subgrafos) {
-            if (subg.tipo == tipo_grafo::componente) {
-                for (string v: subg.vertices) {
-                    cout << v << " \t ";
-                }
-                cout << "" << endl;
-            }
-        }
+////        cout << endl << "COMPONENTES" << endl;
+//        int qnt_componentes = 0;
+//        for (GRAFO subg: this->subgrafos) {
+//            if (subg.tipo == tipo_grafo::componente) {
+//                qnt_componentes++;
+////                for (string v: subg.vertices) {
+////                    cout << v << " \t ";
+////                }
+////                cout << "" << endl;
+//            }
+//        }
         cout << endl << "CICLOS" << endl;
         for (GRAFO g: this->subgrafos) {
             if (g.tipo == tipo_grafo::ciclo) {
@@ -617,20 +645,20 @@ void GRAFO::find_components(map<int,IloNum> arcs_vol) {
     //Filtra arcos e vértices com volume com volume
     vector<ARCO> arcos_com_volume;
     std::set<VERTICE> vertices_com_volume;
-    for (ARCO& a: completo){
-        if(arcs_vol[a.index] > 0){ //define o limitar do volume para considerar um ciclo
-            arcos_com_volume.push_back(a);
-            for (VERTICE& u: vertices_completo){
-                if(u.vertice == a.i or u.vertice == a.j) {
-                    vertices_com_volume.insert(u);
-                }
+    for (auto& a: arcs_vol){
+        ARCO arco = completo[a.first];
+        arcos_com_volume.push_back(arco);
+        for (VERTICE& u: vertices_completo){
+            if(u.vertice == arco.i or u.vertice == arco.j) {
+                vertices_com_volume.insert(u);
             }
         }
     }
 
-    // iniciar algo para encontrar componentes
+    // inicia algo para encontrar componentes
     for (VERTICE u: vertices_com_volume){
         visit(u);
+//        print_running_time("Encontrando componentes: \t" + u.vertice);
     }
 
     // adicionar componentes ao grafo
@@ -664,6 +692,7 @@ void GRAFO::find_components(map<int,IloNum> arcs_vol) {
             add_subgrafo(tipo_grafo::componente, sub_vertices);
         }
     }
+    print_running_time("Deteccao de componentes terminada");
 }
 
 GRAFO::GRAFO(tipo_grafo tg,
@@ -1148,12 +1177,38 @@ ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,GRAFO&, grafo){
 
     // Encontra ciclos no modelo
 
-    cout << "\n ** REMOVENDO CIRCUITOS **" << endl;
-    map<int,IloNum> y_values;
-    for(ARCO& arco : grafo.completo){
-        y_values.insert(pair<int,IloNum>(arco.index,getValue(*arco.y_ptr)));
-    }
+//    cout << "\n ** REMOVENDO CIRCUITOS **" << endl;
+    print_running_time("** REMOVENDO CIRCUITOS **", place::begin);
 
+    // seleciona fluxos com volume e checa se a solução é nova
+    map<int,IloNum> y_values;
+    bool y_iguais = true;
+    cout << endl << "Quantidade de arcos: "<< grafo.completo.size() << endl;
+    IloNumArray y_vars(getEnv());
+    getValues(y_vars, y);
+    for(ARCO& arco : grafo.completo){
+        int y_index = arco.index;
+        IloNum y_vol = y_vars[y_index];
+        if(y_vol > 0){
+            y_values.insert(pair<int,IloNum>(y_index, y_vol));
+            if (y_values_anterior.count(y_index)){ //checa se chave existe no anterior
+                y_iguais = true;
+                continue;
+            }else{
+                y_iguais = false;
+            }
+        }
+    }
+    cout << "Quantidade de arcos com volume: "<< y_values.size() << endl;
+    if(y_iguais){
+        print_running_time("Solucao encontrada está contida na solucao anterior. Finalizando callback", place::end);
+        return;
+    }else{
+        print_running_time("Nova solucao encontrada. Iniciando busca por ciclos");
+    }// fim da selecao de fluxos com volume
+
+
+    // ENCONTRA CICLOS
     try{
         grafo.find_cycles(y_values,true,true);
     }catch(...){
@@ -1175,7 +1230,8 @@ ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,GRAFO&, grafo){
         cout << "Erro ao adicionar lazy constraint" << endl;
     }
 
-
+    //salva resultado para comparar com a prox rodada.
+    y_values_anterior = y_values;
 };
 
 int flow(bool baseline = false,
@@ -1183,8 +1239,13 @@ int flow(bool baseline = false,
          float time_limit_sec = 20*60,
          string data_name = ""){
 
+    string ciclos;
+
+    // Reset initial time
+    start_time = chrono::high_resolution_clock::now();
+
     // Print of program configurations
-    print_running_time("Starting program");
+    print_running_time("STARTING PROGRAM",place::closed);
     cout << "SETUP" << endl;
     cout << "baseline: \t" << to_string(baseline) << endl;
     cout << "find cycles: \t" << to_string(find_cycles) << endl;
@@ -1192,7 +1253,7 @@ int flow(bool baseline = false,
     cout << endl;
 
     IloEnv env;
-    print_running_time("Starting data reading");
+    print_running_time("Starting data reading", place::begin);
 //    cout << "Starting data reading" << endl;
     grafo_pai = GRAFO(data_name);
     // Print of graphs totals
@@ -1204,7 +1265,7 @@ int flow(bool baseline = false,
     cout << "Locations: \t" << to_string(grafo_pai.qnt_localidades) << endl;
     cout << "Products: \t" << to_string(grafo_pai.qnt_produtos) << endl;
 
-    print_running_time("Data reading end");
+    print_running_time("Data reading end", place::end);
     cout << endl << "Model construction start" << endl;
 
 
@@ -1358,14 +1419,13 @@ int flow(bool baseline = false,
             model.add(*arco.w_ptr * grafo_pai.bigM >= *arco.y_ptr); // W entra na FO
         }
 
-        print_running_time("Model construction end");
+        print_running_time("Model construction end", place::end);
 
         // Optimize
         cout << endl << "Optimization start" << endl;
         IloCplex cplex(model);
 
         if(find_cycles) {
-            // todo: mudar find_cycles parar receber parametro para encontrar cyclos apenas em rotas com volume alocado
             // chama a lazy constraint para o modelo
             cplex.use(CycleElimitation(env,grafo_pai));
 //            grafo_pai.find_cycles(env,true, true);
@@ -1385,10 +1445,14 @@ int flow(bool baseline = false,
 //        cplex.setParam(IloCplex::Param::MIP::Cuts::ZeroHalfCut, -1);
 //        cplex.setParam(IloCplex::Param::MIP::Cuts::Cliques, -1);
 //        cplex.setParam(IloCplex::Param::MIP::Cuts::Covers, -1);
-        // parametros originais
+
+        // parametros para o solver
         cplex.setParam(IloCplex::Param::TimeLimit, time_limit_sec);
-        cplex.setParam(IloCplex::Param::Threads, 8);
+        cplex.setParam(IloCplex::Param::Threads, 3);
+        cplex.setParam(IloCplex::Param::MIP::Display, 5);
+        //MIP::Display doc -> https://www.ibm.com/docs/en/icos/20.1.0?topic=mip-progress-reports-interpreting-node-log
 //        cplex.setParam(IloCplex::Param::MIP::Tolerances::AbsMIPGap, 1);
+        cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 0.001);
 //        cplex.setOut(env.getNullStream());
         cplex.setWarning(env.getNullStream());
         //dumping model and fixing variable names in model file.
@@ -1465,7 +1529,7 @@ int flow(bool baseline = false,
             model_file.close();
         }
         cplex.solve();
-        print_running_time("Optimization end");
+        print_running_time("Optimization end", place::end);
 
         if (cplex.getStatus() == IloAlgorithm::Infeasible){
             env.out() << "No Solution Exists" << endl;
@@ -1484,8 +1548,14 @@ int flow(bool baseline = false,
 
         // Preparativos para salvar os resultados
         filesystem::create_directories("dados/resultados/" + data_name); // Cria pasta para salvar os resultados
-        string ciclos = "";
-        if(find_cycles) ciclos = "CIR_REM_";
+        string ciclos;
+        if(find_cycles){
+            ciclos = "SEMRC_";
+        }else{
+            ciclos = "COMRC_";
+        }
+
+        // OUTPUT DE LOCALIDADES
 
         // define arquivo a ser salvo conforme se otimizado ou baseline
         string nome_arquivo_localidades;
@@ -1515,17 +1585,18 @@ int flow(bool baseline = false,
                     csv_localidades << "org;dest;capacidade max;uf;uso" << endl;
                 }
                 csv_localidades << arco.i + ";" + arco.j + ";" << + arco.c \
- << ";" << grafo_pai.vertices_completo_dic[arco.i].uf \
- << ";" << cplex.getValue(x[indice_localidade]) \
+                << ";" << grafo_pai.vertices_completo_dic[arco.i].uf \
+                << ";" << cplex.getValue(x[indice_localidade]) \
                 << endl;
 
                 ++indice_localidade;
             }
         }
+        cout << "Localidades salvas na pasta de resultados" << endl;
         csv_localidades.close();
 
+        // OUTPUT DE SALDOS
         env.out() << endl << "SALDOS DE UF" << endl;
-
         // define arquivo a ser salvo conforme se otimizado ou baseline
         string nome_arquivo_saldos;
         if(baseline) {
@@ -1545,10 +1616,12 @@ int flow(bool baseline = false,
             env.out() << UFs[u] << " -> " << valor_saldo << endl;
             csv_saldos << UFs[u] << ";" << valor_saldo << endl;
         }
-        csv_saldos << "Total ICMS:  " << ";" << total_icms << endl;
+        csv_saldos << "Total ICMS" << ";" << total_icms << endl;
         cout << "Total ICMS: " << total_icms << endl;
+        cout << "Saldos salvos na pasta de resultados" << endl;
         csv_saldos.close();
 
+        // OUTPUT DE FLUXO
         cout << "Salvando fluxos" << endl;
         // define arquivo a ser salvo conforme se otimizado ou baseline
         string nome_arquivo_fluxos;
@@ -1570,52 +1643,129 @@ int flow(bool baseline = false,
                csv_fluxos << flow_vol << endl;
             }
             csv_fluxos.close();
+            cout << "Fluxos salvos na pasta de resultados" << endl;
         }catch(...){
             cout << "Erro ao salvar fluxos de resultado" << endl;
         }
 
 
+        // OUTPUT METRICAS DO SOLVER
+        cout << "Salvando metricas do solver" << endl;
+        // define arquivo a ser salvo conforme se otimizado ou baseline
+        string nome_arquivo_metricas;
+        try{
+            if(baseline) {
+                nome_arquivo_metricas = "dados/resultados/" + data_name + "/" + ciclos + data_name + "baseline_metricas.csv";
+            }else{
+                nome_arquivo_metricas = "dados/resultados/" + data_name + "/" + ciclos + data_name + "metricas.csv";
+            }
+            ofstream csv_metricas (caminho + nome_arquivo_metricas);
+            csv_metricas << "Medida;Valor" << endl;
+            csv_metricas << "Status;" << cplex.getStatus() << endl;
+            csv_metricas << "Resultado FO;" << cplex.getObjValue() << endl;
+            csv_metricas << "Tempo de solver;" << cplex.getTime() << endl;
+            csv_metricas << "MIP gap relativo;" << cplex.getMIPRelativeGap() << endl;
+            csv_metricas << "Custo total ICMS;" << total_icms << endl;
+            // todo: incluir demais custos do resumo
+            string todo = "todo";
+            csv_metricas << "Total custos fixos;" << todo << endl;
+            csv_metricas << "Total custos variáveis;" << todo << endl;
+            csv_metricas << "Total custos variáveis;" << todo << endl;
+            csv_metricas.close();
+            cout << "Metricas salvas na pasta de resultados" << endl;
+        }catch(...){
+            cout << "Erro ao salvar metricas" << endl;
+        }
+
         // print final model
         cplex.exportModel("dados/debug/modelo_final.lp");
     }
     catch (IloException& ex) {
-        cerr << "Error: " << ex << endl;
+        cerr << endl << "Error: " << ex << endl;
+        print_running_time("Otimização terminada com erro.");
+        try {
+            string nome_arquivo_erros = "dados/resultados/" + data_name + "/" + ciclos + data_name + "erros.csv";
+            ofstream csv_erros(caminho + nome_arquivo_erros);
+            csv_erros << "Medida;Valor" << endl;
+            csv_erros << "Name" << ";" << ciclos + data_name << endl;
+            csv_erros << "Error" << ";" << ex << endl;
+            csv_erros << "Total time" << ";" << total_time.count()/60 << "m" << total_time.count()%60 << "s" << endl;
+            csv_erros.close();
+            cout << "Erros de otimização salvos na pasta de resultados." << endl;
+        } catch (...) {
+            cout << "Erro ao salvar erros." << endl;
+        }
     }
-//    catch (...) {
-//        cerr << "Error" << endl;
-//    }
     env.end();
+
+    // CLEAN AND RESET VARS
+    start_time = chrono::high_resolution_clock::now();
+    last_time = start_time;
+    total_time = last_time - start_time;
+    y_values_anterior.clear();
+
+    print_running_time("ENDING PROGRAM", place::end);
     return 0;
+}
+
+void save_meta_data(string data_name){
+    //todo: passar para a struct grafo
+    grafo_pai = GRAFO(data_name);
+    string ciclos = "METADAT_";
+
+    // Print of graphs totals
+    try{
+        string nome_arquivo_metas = "dados/resultados/" + data_name + "/" + data_name + "meta_data.csv";
+        ofstream csv_metas (caminho + nome_arquivo_metas);
+        csv_metas << "Medidade;Valor" << endl;
+        csv_metas << "Data name;" << data_name << endl;
+        csv_metas << "Nodes;" << to_string(grafo_pai.qnt_vertices) << endl;
+        csv_metas << "Arcs;" << to_string(grafo_pai.qnt_arcos) << endl;
+        csv_metas << "Location arcs;" << to_string(grafo_pai.qnt_arcos_localidade) << endl;
+        csv_metas << "Transp arcs;" << to_string(grafo_pai.qnt_arcos_transporte) << endl;
+        csv_metas << "Locations;" << to_string(grafo_pai.qnt_localidades) << endl;
+        csv_metas << "Products;" << to_string(grafo_pai.qnt_produtos) << endl;
+        csv_metas.close();
+        cout << "Meta dados salvos na pasta de resultados" << endl;
+    }catch(...){
+        cout << "Erro ao salvar meta dados" << endl;
+    }
 }
 
 int main(int argc, char* argv[]) {
     string loop_input;
-    // read arguments and define scenario.
+    // Define scenario
     string data_name;
-    data_name = "teste_";
-    float time_limit_sec = 10*60;
+    data_name = "cenario_";
+    float time_limit_sec = 60*60;
+    int tipo_otm = 0 ;
+    // read arguments
     if (argc > 0){
-        for(int i = 0; i < argc; i++){
-            cout << i << ": ";
-            cout << argv[i]<< endl;
-            if(argv[i] == string("-c")){
-                data_name = argv[i + 1];
-            }else if(argv[i] == string("-t")){
-                time_limit_sec = stof(argv[i+1]);
-            }
+        cout << endl << "Parameters" << endl;
+        for(int i = 0; i < argc; ++i){
+            if(i%2 != 0) cout << argv[i] << ": " << argv[i + 1] << endl;
+
+            if(argv[i] == string("-c")) data_name = argv[i + 1];
+            if(argv[i] == string("-t")) time_limit_sec = stof(argv[i+1]);
+            if(argv[i] == string("-o")) tipo_otm = stoi(argv[i+1]);
         }
+        cout << endl;
     }
 
-    while(true){
-        flow(false,false, time_limit_sec,data_name);
-        flow(false,true, time_limit_sec,data_name);
-        cout << "Press \"s\" to run again" << endl;
-        cin >> loop_input;
-        if(loop_input != "s"){
-            cout << "Exiting Program" << endl;
+    switch (tipo_otm) {
+        case 0: // com e sem ciclo
+            flow(false,false, time_limit_sec,data_name);
+            flow(false,true, time_limit_sec,data_name);
             break;
-        }
+        case 1: // apenas sem remocao de ciclos
+            flow(false,false, time_limit_sec,data_name);
+            break;
+        case 2: // apenas com remocao de ciclos
+            flow(false,true, time_limit_sec,data_name);
+            break;
     }
+    save_meta_data(data_name);
+    sleep(5);
 
     return 0;
 }

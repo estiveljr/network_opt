@@ -1,0 +1,11 @@
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f100_c100_g50_"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f200_c100_g50_"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f10_c200_g50_"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f10_c400_g50_"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f10_c1000_g50_"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f10_c2000_g50_"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f10_c100_g100_"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f10_c100_g250_"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f10_c100_g1000_"
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f10_c100_g5000_"
+%PAUSE

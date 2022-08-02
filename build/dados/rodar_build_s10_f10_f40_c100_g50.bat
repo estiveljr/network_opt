@@ -1,0 +1,2 @@
+C:\Windows\system32\wsl.exe --distribution Debian --exec /bin/bash -c "cd /mnt/d/OneDrive/_each/_Quali/Artigo/build && /mnt/d/OneDrive/_each/_Quali/Artigo/build/modelocpp -c cen_s10_f10_f40_c100_g50_"
+%PAUSE

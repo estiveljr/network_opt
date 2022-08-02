@@ -26,3 +26,4 @@ build/dados/resultados/*.xlsx
 build/dados/resultados/xlsx/
 build/dados/resultados/resultados_sem_prodepe/xlsx
 build/dados/resultados/resultados_com_prodepe/xlsx
+build/dados/cen*
