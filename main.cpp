@@ -1662,14 +1662,13 @@ int flow(bool baseline = false,
             ofstream csv_metricas (caminho + nome_arquivo_metricas);
             csv_metricas << "Medida;Valor" << endl;
             csv_metricas << "Status;" << cplex.getStatus() << endl;
-            csv_metricas << "Resultado FO;" << cplex.getObjValue() << endl;
             csv_metricas << "Tempo de solver;" << cplex.getTime() << endl;
             csv_metricas << "MIP gap relativo;" << cplex.getMIPRelativeGap() << endl;
+            csv_metricas << "Resultado FO;" << cplex.getObjValue() << endl;
             csv_metricas << "Custo total ICMS;" << total_icms << endl;
             // todo: incluir demais custos do resumo
             string todo = "todo";
             csv_metricas << "Total custos fixos;" << todo << endl;
-            csv_metricas << "Total custos variáveis;" << todo << endl;
             csv_metricas << "Total custos variáveis;" << todo << endl;
             csv_metricas.close();
             cout << "Metricas salvas na pasta de resultados" << endl;
