@@ -13,8 +13,8 @@ SEPARATOR = ";"
 GERAR_EXCEL = False
 
 class TipoArco(Enum):
-    transportation = 1
-    location = 1
+    transportation = "transportation"
+    location = "location"
 
 
 
@@ -177,7 +177,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
         a = gerar_a(tipo_de_arco, sup, sup)
         if INPUT_DATA: a = 0  # factories fixed cost
         c = gerar_c(tipo_de_arco, sup, sup)
-        arcos_fornecedores.extend([arco(tipo_de_arco, f'SUP_{sup}_in', f"SUP_{sup}_out", str(good),
+        arcos_fornecedores.extend([arco(tipo_de_arco.value, f'SUP_{sup}_in', f"SUP_{sup}_out", str(good),
                                         a,
                                         gerar_b(tipo_de_arco, sup, sup, good),
                                         c,
@@ -190,7 +190,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
         a = gerar_a(tipo_de_arco, fac, fac)
         if INPUT_DATA: a = 3464620  # factories fixed cost
         c = gerar_c(tipo_de_arco, fac, fac)
-        arcos_fac.extend([arco(tipo_de_arco, f"FAC_{fac}_in", f"FAC_{fac}_out", str(good),
+        arcos_fac.extend([arco(tipo_de_arco.value, f"FAC_{fac}_in", f"FAC_{fac}_out", str(good),
                                a,
                                gerar_b(tipo_de_arco, fac, fac, good),
                                c,
@@ -203,7 +203,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
         a = gerar_a(tipo_de_arco, flt, flt)
         if INPUT_DATA: a = 2713488  # facility fixed cost
         c = gerar_c(tipo_de_arco, flt, flt)
-        arcos_cds.extend([arco(tipo_de_arco, f"FLT_{flt}_in", f"FLT_{flt}_out", str(good),
+        arcos_cds.extend([arco(tipo_de_arco.value, f"FLT_{flt}_in", f"FLT_{flt}_out", str(good),
                                a,
                                gerar_b(tipo_de_arco, flt, flt, good),
                                c,
@@ -216,7 +216,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
         a = gerar_a(tipo_de_arco, clt, clt)
         if INPUT_DATA: a = 0  # factories fixed cost
         c = gerar_c(tipo_de_arco, clt, clt)
-        arcos_clientes.extend([arco(tipo_de_arco, f"CLT_{clt}_in", f"CLT_{clt}_out", str(good),
+        arcos_clientes.extend([arco(tipo_de_arco.value, f"CLT_{clt}_in", f"CLT_{clt}_out", str(good),
                                     a,
                                     gerar_b(tipo_de_arco, clt, clt, good),
                                     c,
@@ -226,7 +226,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
 
     # CRIA ARCOS DE TRANSPORTE
     tipo_de_arco = TipoArco.location
-    arcos_inbound = [arco(tipo_de_arco, f"SUP_{sup}_out", f"FAC_{fac}_in", str(good),
+    arcos_inbound = [arco(tipo_de_arco.value, f"SUP_{sup}_out", f"FAC_{fac}_in", str(good),
                           gerar_a(tipo_de_arco, sup, fac),
                           gerar_b(tipo_de_arco, sup, fac, good),
                           gerar_c(tipo_de_arco, sup, fac),
@@ -235,7 +235,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                      for sup in sups_iterator
                      for fac in fac_iterator
                      for good in goods_iterator]
-    arcos_transferencia_fac_flt = [arco(tipo_de_arco, f"FAC_{fac}_out", f"FLT_{flt}_in", str(good),
+    arcos_transferencia_fac_flt = [arco(tipo_de_arco.value, f"FAC_{fac}_out", f"FLT_{flt}_in", str(good),
                                         gerar_a(tipo_de_arco, fac, flt),
                                         gerar_b(tipo_de_arco, fac, flt, good),
                                         gerar_c(tipo_de_arco, fac, flt),
@@ -244,7 +244,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                                    for fac in fac_iterator
                                    for flt in flt_iterator
                                    for good in goods_iterator]
-    arcos_transferencia_flt_flt = [arco(tipo_de_arco, f"FLT_{flt_i}_out", f"FLT_{flt_j}_in", str(good),
+    arcos_transferencia_flt_flt = [arco(tipo_de_arco.value, f"FLT_{flt_i}_out", f"FLT_{flt_j}_in", str(good),
                                         gerar_a(tipo_de_arco, flt_i, flt_j),
                                         gerar_b(tipo_de_arco, flt_i, flt_j, good),
                                         gerar_c(tipo_de_arco, flt_i, flt_j),
@@ -253,7 +253,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                                    for flt_i in flt_iterator
                                    for flt_j in flt_iterator
                                    for good in goods_iterator if flt_i != flt_j]
-    arcos_outbound = [arco(tipo_de_arco, f"FLT_{flt}_out", f"CLT_{clt_i}_in", str(good),
+    arcos_outbound = [arco(tipo_de_arco.value, f"FLT_{flt}_out", f"CLT_{clt_i}_in", str(good),
                            gerar_a(tipo_de_arco, flt, clt_i),
                            gerar_b(tipo_de_arco, flt, clt_i, good),
                            gerar_c(tipo_de_arco, flt, clt_i),
