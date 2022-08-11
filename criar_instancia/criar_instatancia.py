@@ -225,7 +225,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                                for good in goods_iterator])
 
     # CRIA ARCOS DE TRANSPORTE
-    tipo_de_arco = TipoArco.location
+    tipo_de_arco = TipoArco.transportation
     arcos_inbound = [arco(tipo_de_arco.value, f"SUP_{sup}_out", f"FAC_{fac}_in", str(good),
                           gerar_a(tipo_de_arco, sup, fac),
                           gerar_b(tipo_de_arco, sup, fac, good),
