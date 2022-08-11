@@ -1221,7 +1221,11 @@ ILOLAZYCONSTRAINTCALLBACK1(CycleElimitation,GRAFO&, grafo){
             if(subgrafo.tipo == tipo_grafo::ciclo){
                 IloBoolVarArray w_sum = IloBoolVarArray(getEnv());
                 for(ARCO& arco: subgrafo.completo){
+                    // soma para a restricao do ciclo
                     w_sum.add(*arco.w_ptr);
+
+                    // restrição para ligar os binários W que serão usados no corte.
+                    add(*arco.w_ptr * grafo_pai.bigM >= *arco.y_ptr); // W entra na FO
                 }
                 add(IloSum(w_sum) < subgrafo.qnt_vertices);
             }
@@ -1393,14 +1397,14 @@ int flow(bool baseline = false,
 
 
         //restrição de baseline INCOMPLETA
-        if(baseline){
-            float buffer = 1;
-            for(ARCO arco: grafo_pai.completo){
-                int index = arco.index;
-                model.add(y[index] + buffer >= arco.v);
-                model.add(y[index] - buffer <= arco.v);
-            }
-        }
+//        if(baseline){
+//            float buffer = 1;
+//            for(ARCO arco: grafo_pai.completo){
+//                int index = arco.index;
+//                model.add(y[index] + buffer >= arco.v);
+//                model.add(y[index] - buffer <= arco.v);
+//            }
+//        }
 
         //RESTRIÇAO DE CICLOS lazy constraint
         /*
@@ -1414,10 +1418,6 @@ int flow(bool baseline = false,
          * w_ijs = binário que indica o se um determinado arco está sendo usado
         */
 
-        // restrição para ligar os binários W que serão usados no corte.
-        for(ARCO& arco: grafo_pai.completo){
-            model.add(*arco.w_ptr * grafo_pai.bigM >= *arco.y_ptr); // W entra na FO
-        }
 
         print_running_time("Model construction end", place::end);
 
@@ -1448,8 +1448,8 @@ int flow(bool baseline = false,
 
         // parametros para o solver
         cplex.setParam(IloCplex::Param::TimeLimit, time_limit_sec);
-        cplex.setParam(IloCplex::Param::Threads, 3);
-        cplex.setParam(IloCplex::Param::MIP::Display, 5);
+//        cplex.setParam(IloCplex::Param::Threads, 3);
+//        cplex.setParam(IloCplex::Param::MIP::Display, 5);
         //MIP::Display doc -> https://www.ibm.com/docs/en/icos/20.1.0?topic=mip-progress-reports-interpreting-node-log
 //        cplex.setParam(IloCplex::Param::MIP::Tolerances::AbsMIPGap, 1);
         cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 0.001);
@@ -1550,9 +1550,9 @@ int flow(bool baseline = false,
         filesystem::create_directories("dados/resultados/" + data_name); // Cria pasta para salvar os resultados
         string ciclos;
         if(find_cycles){
-            ciclos = "SEMRC_";
-        }else{
             ciclos = "COMRC_";
+        }else{
+            ciclos = "SEMRC_";
         }
 
         // OUTPUT DE LOCALIDADES
@@ -1649,10 +1649,28 @@ int flow(bool baseline = false,
         }
 
 
-        // OUTPUT METRICAS DO SOLVER
+        // OUTPUT RESUMO E MÉTRICAS DO SOLVER
         cout << "Salvando metricas do solver" << endl;
         // define arquivo a ser salvo conforme se otimizado ou baseline
         string nome_arquivo_metricas;
+        IloNumArray x_values(env);
+        IloNumArray y_values(env);
+        IloNumArray w_values(env);
+        double total_custo_fixo = 0;
+        double total_custo_var = 0;
+        double total_custo_penal_w = 0;
+        cplex.getValues(x_values,x);
+        cplex.getValues(y_values,y);
+        cplex.getValues(w_values,w);
+        int x_cont = 0;
+        for(ARCO_SIMPLES arco : grafo_pai.simples_loc){
+            total_custo_fixo += arco.a * x_values[x_cont];
+            x_cont++;
+        }
+        for(ARCO arco : grafo_pai.completo){
+            total_custo_var += arco.b * y_values[arco.index];
+            total_custo_penal_w += w_values[arco.index];
+        }
         try{
             if(baseline) {
                 nome_arquivo_metricas = "dados/resultados/" + data_name + "/" + ciclos + data_name + "baseline_metricas.csv";
@@ -1664,12 +1682,11 @@ int flow(bool baseline = false,
             csv_metricas << "Status;" << cplex.getStatus() << endl;
             csv_metricas << "Tempo de solver;" << cplex.getTime() << endl;
             csv_metricas << "MIP gap relativo;" << cplex.getMIPRelativeGap() << endl;
-            csv_metricas << "Resultado FO;" << cplex.getObjValue() << endl;
-            csv_metricas << "Custo total ICMS;" << total_icms << endl;
-            // todo: incluir demais custos do resumo
-            string todo = "todo";
-            csv_metricas << "Total custos fixos;" << todo << endl;
-            csv_metricas << "Total custos variáveis;" << todo << endl;
+            csv_metricas << "Resultado FO;" << to_string(cplex.getObjValue()) << endl;
+            csv_metricas << "Custo total ICMS;" << to_string(total_icms) << endl;
+            csv_metricas << "Total custos fixos;" << to_string(total_custo_fixo) << endl;
+            csv_metricas << "Total custos variáveis;" << to_string(total_custo_var) << endl;
+            csv_metricas << "Total custos penalizadores w;" << to_string(total_custo_penal_w) << endl;
             csv_metricas.close();
             cout << "Metricas salvas na pasta de resultados" << endl;
         }catch(...){
@@ -1697,13 +1714,13 @@ int flow(bool baseline = false,
     }
     env.end();
 
+    print_running_time("ENDING PROGRAM", place::end);
+
     // CLEAN AND RESET VARS
     start_time = chrono::high_resolution_clock::now();
     last_time = start_time;
     total_time = last_time - start_time;
     y_values_anterior.clear();
-
-    print_running_time("ENDING PROGRAM", place::end);
     return 0;
 }
 

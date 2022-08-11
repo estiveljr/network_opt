@@ -1,5 +1,6 @@
 from collections import namedtuple
 from random import randrange
+from enum import Enum
 
 import pandas as pd
 
@@ -10,6 +11,11 @@ OUTPUT_FOLDER = "../build/dados/"
 FULL_DEMAND = 1E6
 SEPARATOR = ";"
 GERAR_EXCEL = False
+
+class TipoArco(Enum):
+    transportation = 1
+    location = 1
+
 
 
 def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
@@ -83,13 +89,13 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
 
     # Define range of costs
     def custo_fixo(tipo_de_arco, i, s) -> float:
-        if tipo_de_arco == "location":
-            return randrange(int(10e3), int(100e3))
+        if tipo_de_arco == TipoArco.location:
+            return randrange(int(10e4), int(100e4))
         else:
             return 0
 
     def capacidade(tipo_de_arco, i, j):
-        if tipo_de_arco == "location":
+        if tipo_de_arco == TipoArco.location:
             if INPUT_DATA:
                 return 0
             else:
@@ -99,43 +105,45 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
             return 0
 
     def custo_variavel(tipo_de_arco, i, j):
-        if tipo_de_arco == "location":
-            return randrange(10, 100)
+        if tipo_de_arco == TipoArco.location:
+            return randrange(10, 20)
+        if tipo_de_arco == TipoArco.transportation:
+            return randrange(10, 20)
         else:
             return 0
 
     def icms_st(tipo_de_arco, i, j, s):
-        if tipo_de_arco == 'transportation':
+        if tipo_de_arco == TipoArco.transportation:
             return randrange(10, 100)
         else:
             return 0
 
     def custos_fornecimento(tipo_de_arco, i, j, s):
-        if tipo_de_arco == 'transportation':
+        if tipo_de_arco == TipoArco.transportation:
             return randrange(10, 100)
         else:
             return 0
 
     def icms(tipo_de_arco, i, j, s):
-        if tipo_de_arco == 'transportation':
+        if tipo_de_arco == TipoArco.transportation:
             return randrange(10, 100)
         else:
             return 0
 
     def cred_pres(tipo_de_arco, i, j, s):
-        if tipo_de_arco == 'transportation':
+        if tipo_de_arco == TipoArco.transportation:
             return int(randrange(0, 10))
         else:
             return 0
 
     def difal(tipo_de_arco, i, j, s):
-        if tipo_de_arco == 'transportation':
+        if tipo_de_arco == TipoArco.transportation:
             return int(randrange(0, 10))
         else:
             return 0
 
     def anulacao(tipo_de_arco, j, s):
-        if tipo_de_arco == 'transportation':
+        if tipo_de_arco == TipoArco.transportation:
             return 0
         else:
             return 0
@@ -163,7 +171,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
 
     p = lambda u: icmsca(u)
     # CRIA ARCOS DE location
-    tipo_de_arco = 'location'
+    tipo_de_arco = TipoArco.location
     arcos_fornecedores = []
     for sup in sups_iterator:
         a = gerar_a(tipo_de_arco, sup, sup)
@@ -176,7 +184,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                                         gerar_m(tipo_de_arco, sup, sup, good),
                                         gerar_n(tipo_de_arco, sup, sup, good))
                                    for good in goods_iterator])
-    tipo_de_arco = 'location'
+    tipo_de_arco = TipoArco.location
     arcos_fac = []
     for fac in fac_iterator:
         a = gerar_a(tipo_de_arco, fac, fac)
@@ -189,7 +197,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                                gerar_m(tipo_de_arco, fac, fac, good),
                                gerar_n(tipo_de_arco, fac, fac, good))
                           for good in goods_iterator])
-    tipo_de_arco = 'location'
+    tipo_de_arco = TipoArco.location
     arcos_cds = []
     for flt in flt_iterator:
         a = gerar_a(tipo_de_arco, flt, flt)
@@ -202,7 +210,7 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                                gerar_m(tipo_de_arco, flt, flt, good),
                                gerar_n(tipo_de_arco, flt, flt, good))
                           for good in goods_iterator])
-    tipo_de_arco = 'location'
+    tipo_de_arco = TipoArco.location
     arcos_clientes = []
     for clt in clt_iterator:
         a = gerar_a(tipo_de_arco, clt, clt)
@@ -215,14 +223,15 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                                     gerar_m(tipo_de_arco, clt, clt, good),
                                     gerar_n(tipo_de_arco, clt, clt, good))
                                for good in goods_iterator])
-    # CRIA ARCOS DE transportation
-    tipo_de_arco = 'transportation'
+
+    # CRIA ARCOS DE TRANSPORTE
+    tipo_de_arco = TipoArco.location
     arcos_inbound = [arco(tipo_de_arco, f"SUP_{sup}_out", f"FAC_{fac}_in", str(good),
                           gerar_a(tipo_de_arco, sup, fac),
                           gerar_b(tipo_de_arco, sup, fac, good),
                           gerar_c(tipo_de_arco, sup, fac),
                           gerar_m(tipo_de_arco, sup, fac, good),
-                          gerar_n(tipo_de_arco, sup, fac, good))
+                          gerar_n(tipo_de_arco, sup, fac, good) * 5) #aumenta crédito para gerar ciclos
                      for sup in sups_iterator
                      for fac in fac_iterator
                      for good in goods_iterator]
@@ -235,15 +244,15 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                                    for fac in fac_iterator
                                    for flt in flt_iterator
                                    for good in goods_iterator]
-    arcos_transferencia = [arco(tipo_de_arco, f"FLT_{flt_i}_out", f"FLT_{flt_j}_in", str(good),
-                                gerar_a(tipo_de_arco, flt_i, flt_j),
-                                gerar_b(tipo_de_arco, flt_i, flt_j, good),
-                                gerar_c(tipo_de_arco, flt_i, flt_j),
-                                gerar_m(tipo_de_arco, flt_i, flt_j, good),
-                                gerar_n(tipo_de_arco, flt_i, flt_j, good))
-                           for flt_i in flt_iterator
-                           for flt_j in flt_iterator
-                           for good in goods_iterator if flt_i != flt_j]
+    arcos_transferencia_flt_flt = [arco(tipo_de_arco, f"FLT_{flt_i}_out", f"FLT_{flt_j}_in", str(good),
+                                        gerar_a(tipo_de_arco, flt_i, flt_j),
+                                        gerar_b(tipo_de_arco, flt_i, flt_j, good),
+                                        gerar_c(tipo_de_arco, flt_i, flt_j),
+                                        gerar_m(tipo_de_arco, flt_i, flt_j, good),
+                                        gerar_n(tipo_de_arco, flt_i, flt_j, good))
+                                   for flt_i in flt_iterator
+                                   for flt_j in flt_iterator
+                                   for good in goods_iterator if flt_i != flt_j]
     arcos_outbound = [arco(tipo_de_arco, f"FLT_{flt}_out", f"CLT_{clt_i}_in", str(good),
                            gerar_a(tipo_de_arco, flt, clt_i),
                            gerar_b(tipo_de_arco, flt, clt_i, good),
@@ -253,16 +262,19 @@ def gerar_instancias(name, nsup, nfac, nflt, nclt, ngds):
                       for flt in flt_iterator
                       for clt_i in clt_iterator
                       for good in goods_iterator]
-    # CRIAR DF COM ARCOS DE locationS
+
+    # CRIAR DF COM ARCOS DE LOCALIDADES
     arcos_locations = [arcos_fornecedores, arcos_fac, arcos_cds, arcos_clientes]
     df_arcos_locations = pd.DataFrame()
     for arcos in arcos_locations:
         df_arcos_locations = df_arcos_locations.append(pd.DataFrame(arcos))
-    # CRIAR DF COM ARCOS DE transportation
-    arcos_transportation = [arcos_inbound, arcos_transferencia_fac_flt, arcos_transferencia, arcos_outbound]
+
+    # CRIAR DF COM ARCOS DE TRANSPORTE
+    arcos_transportation = [arcos_inbound, arcos_transferencia_fac_flt, arcos_transferencia_flt_flt, arcos_outbound]
     df_arcos_transportation = pd.DataFrame()
     for arcos in arcos_transportation:
         df_arcos_transportation = df_arcos_transportation.append(pd.DataFrame(arcos))
+
     # AGRUPAR TODOS OS ARCOS
     df_arcos_consolidados = df_arcos_locations.append(df_arcos_transportation)
     # DEFINIR VERTICES
@@ -348,6 +360,7 @@ def create_wsl_bat(name, sup, fac, fcl, clt, gds, salvar_arquivo = False):
             return bat
         except:
             print("Não foi possível salvar o arquivo .bat")
+    return bat
 
 
 
@@ -356,21 +369,19 @@ if __name__ == '__main__':
     cenario = namedtuple("cenario", ["n_sup", "n_fac", "n_cds", "n_clt", "n_gds"])
 
     cenarios = (
-        # cenario(10, 10, 10, 100, 50),
-        # cenario(10, 10, 20, 100, 50),
-        # cenario(10, 10, 40, 100, 50),
-        cenario(10, 10, 100, 100, 50),
-        cenario(10, 10, 200, 100, 50),
-        # cenario(10, 10, 10, 100, 50), # repete o primeiro
-        cenario(10, 10, 10, 200, 50),
-        cenario(10, 10, 10, 400, 50),
-        cenario(10, 10, 10, 1000, 50),
-        cenario(10, 10, 10, 2000, 50),
-        # cenario(10, 10, 10, 100, 50), # repete o primeiro
-        cenario(10, 10, 10, 100, 100),
-        cenario(10, 10, 10, 100, 250),
-        cenario(10, 10, 10, 100, 1000),
-        cenario(10, 10, 10, 100, 5000),
+        cenario(10,     10,     10,     100,    25),
+        cenario(10,     10,     20,     100,    25),
+        cenario(10,     10,     40,     100,    25),
+        cenario(10,     10,     80,     100,    25),
+        cenario(10,     10,     160,    100,    25),
+        cenario(10,     10,     10,     150,    25),
+        cenario(10,     10,     10,     200,    25),
+        cenario(10,     10,     10,     300,    25),
+        cenario(10,     10,     10,     500,    25),
+        cenario(10,     10,     10,     100,    50),
+        cenario(10,     10,     10,     100,    100),
+        cenario(10,     10,     10,     100,    250),
+        cenario(10,     10,     10,     100,    100),
     )
 
     # cenarios = (
@@ -384,7 +395,7 @@ if __name__ == '__main__':
 
     bat_consolidado = ""
     for cen in cenarios:
-        bat_consolidado += create_wsl_bat(name, cen.n_sup, cen.n_fac, cen.n_cds, cen.n_clt, cen.n_gds)
+        bat_consolidado += create_wsl_bat(name, cen.n_sup, cen.n_fac, cen.n_cds, cen.n_clt, cen.n_gds, False)
         bat_consolidado += "\n"
 
     try:
